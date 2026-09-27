@@ -30,6 +30,11 @@ const slipStorage = multer.diskStorage({
 });
 const uploadSlip = multer({ storage: slipStorage });
 
+// Route for Auth Page
+app.get(['/auth', '/login', '/register'], (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'auth.html'));
+});
+
 // Helper: Simple session simulation via Header (or fallback to user_id query/body)
 function getCurrentUser(req) {
     const userIdHeader = req.headers['x-user-id'] || req.query.current_user_id;
@@ -47,28 +52,53 @@ function getCurrentUser(req) {
 // Register
 app.post('/api/auth/register', (req, res) => {
     try {
-        const { username, email, password, full_name, phone } = req.body;
-        if (!username || !email || !password || !full_name) {
-            return res.status(400).json({ error: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน' });
+        let { username, email, password, full_name, phone } = req.body;
+        if (!email || !password || !full_name) {
+            return res.status(400).json({ error: 'กรุณากรอกชื่อ-นามสกุล, อีเมล และรหัสผ่านให้ครบถ้วน' });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' });
         }
 
-        // Check duplicate
-        const existing = db.prepare('SELECT user_id FROM users WHERE username = ? OR email = ?').get(username, email);
-        if (existing) {
-            return res.status(400).json({ error: 'ชื่อบัญชีหรืออีเมลนี้มีผู้ใช้งานแล้ว' });
+        // Auto-generate username from email prefix if omitted
+        if (!username || !username.trim()) {
+            const baseUser = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') || 'user';
+            let candidate = baseUser;
+            let counter = 1;
+            while (db.prepare('SELECT user_id FROM users WHERE username = ?').get(candidate)) {
+                candidate = `${baseUser}${counter++}`;
+            }
+            username = candidate;
+        }
+
+        // Check duplicate email
+        const existingEmail = db.prepare('SELECT user_id FROM users WHERE email = ?').get(email.trim());
+        if (existingEmail) {
+            return res.status(400).json({ error: 'อีเมลนี้ถูกใช้งานในระบบแล้ว กรุณาเข้าสู่ระบบ' });
+        }
+
+        // Check duplicate username
+        const existingUser = db.prepare('SELECT user_id FROM users WHERE username = ?').get(username.trim());
+        if (existingUser) {
+            return res.status(400).json({ error: 'ชื่อบัญชีนี้มีผู้ใช้งานแล้ว' });
         }
 
         const insertUser = db.prepare(`
             INSERT INTO users (role_id, username, email, password_hash, full_name, phone)
             VALUES (1, ?, ?, ?, ?, ?)
         `);
-        const result = insertUser.run(username, email, password, full_name, phone || null);
-        const newUser = db.prepare('SELECT user_id, role_id, username, email, full_name, phone FROM users WHERE user_id = ?').get(result.lastInsertRowid);
+        const result = insertUser.run(username.trim(), email.trim(), password, full_name.trim(), phone ? phone.trim() : null);
+        const newUser = db.prepare(`
+            SELECT u.user_id, u.role_id, r.role_name, u.username, u.email, u.full_name, u.phone 
+            FROM users u
+            JOIN roles r ON u.role_id = r.role_id
+            WHERE u.user_id = ?
+        `).get(result.lastInsertRowid);
 
         // Auto create cart for new user
         db.prepare('INSERT OR IGNORE INTO carts (user_id) VALUES (?)').run(newUser.user_id);
 
-        res.status(201).json({ message: 'ลงทะเบียนสำเร็จ', user: newUser });
+        res.status(201).json({ message: 'สร้างบัญชีสำเร็จ ยินดีต้อนรับสู่ระบบ!', user: newUser });
     } catch (err) {
         console.error('Register error:', err);
         res.status(500).json({ error: err.message });
@@ -80,7 +110,7 @@ app.post('/api/auth/login', (req, res) => {
     try {
         const { username, password } = req.body;
         if (!username || !password) {
-            return res.status(400).json({ error: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' });
+            return res.status(400).json({ error: 'กรุณากรอกอีเมล/ชื่อผู้ใช้ และรหัสผ่าน' });
         }
 
         const user = db.prepare(`
@@ -88,10 +118,10 @@ app.post('/api/auth/login', (req, res) => {
             FROM users u
             JOIN roles r ON u.role_id = r.role_id
             WHERE (u.username = ? OR u.email = ?)
-        `).get(username, username);
+        `).get(username.trim(), username.trim());
 
         if (!user || user.password_hash !== password) {
-            return res.status(401).json({ error: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' });
+            return res.status(401).json({ error: 'อีเมล/ชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง' });
         }
 
         // Auto ensure cart exists
@@ -99,6 +129,23 @@ app.post('/api/auth/login', (req, res) => {
 
         const { password_hash, ...safeUser } = user;
         res.json({ message: 'เข้าสู่ระบบสำเร็จ', user: safeUser });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Test accounts for demonstration
+app.get('/api/auth/test-accounts', (req, res) => {
+    try {
+        const accounts = db.prepare(`
+            SELECT u.user_id, u.role_id, r.role_name, u.username, u.email, u.full_name, u.phone,
+                   CASE WHEN u.role_id = 2 THEN 'admin123' ELSE '123456' END as test_password
+            FROM users u
+            JOIN roles r ON u.role_id = r.role_id
+            ORDER BY u.role_id DESC, u.user_id ASC
+            LIMIT 6
+        `).all();
+        res.json(accounts);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

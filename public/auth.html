@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสมาชิก & สิทธิ์การใช้งาน - EBOOK_ONLINE</title>
+    <meta name="description" content="ระบบจัดการสมาชิก เข้าสู่ระบบ สมัครสมาชิก และควบคุมสิทธิ์การใช้งาน (RBAC) สำหรับระบบร้านค้า E-Book ออนไลน์">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* Auth Page Dedicated Styles */
+        body {
+            background-color: #0b0f17;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Sarabun', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .auth-page-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px 60px;
+            max-width: 100%;
+        }
+
+        /* Top Avatar Circle */
+        .auth-avatar-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(30, 41, 59, 0.7);
+            border: 2px solid rgba(245, 158, 11, 0.45);
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-avatar-circle svg {
+            width: 36px;
+            height: 36px;
+            fill: none;
+            stroke: #f59e0b;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Titles */
+        .auth-heading {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0 0 8px;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        .auth-subheading {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            margin: 0 0 32px;
+            text-align: center;
+        }
+
+        .auth-subheading .db-tag {
+            color: #fbbf24;
+            font-weight: 600;
+        }
+
+        /* Main Card */
+        .auth-card {
+            width: 100%;
+            max-width: 540px;
+            background: #111827;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px 36px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+            box-sizing: border-box;
+        }
+
+        /* Tabs */
+        .auth-tabs {
+            display: flex;
+            background: #1f2937;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 24px;
+            gap: 4px;
+        }
+
+        .auth-tab-btn {
+            flex: 1;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #94a3b8;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .auth-tab-btn.active {
+            background: #f59e0b;
+            color: #111827;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .auth-tab-btn:not(.active):hover {
+            color: #f8fafc;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Section Intro */
+        .auth-section-title {
+            font-size: 0.95rem;
+            color: #f59e0b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        /* Form Group */
+        .auth-form-group {
+            margin-bottom: 18px;
+        }
+
+        .auth-label {
+            display: block;
+            font-size: 0.88rem;
+            color: #e2e8f0;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .auth-label .required {
+            color: #f59e0b;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 13px 16px;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+        }
+
+        .auth-input::placeholder {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        /* 2-Column Row */
+        .auth-row-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        @media (max-width: 580px) {
+            .auth-row-2col {
+                grid-template-columns: 1fr;
+            }
+            .auth-card {
+                padding: 24px 20px;
+            }
+        }
+
+        /* Submit Button */
+        .auth-btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: #f59e0b;
+            color: #111827;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+        }
+
+        .auth-btn-submit:hover {
+            background: #d97706;
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .auth-btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Switch text footer */
+        .auth-footer-text {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.88rem;
+            color: #94a3b8;
+        }
+
+        .auth-footer-link {
+            color: #f59e0b;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: underline;
+            margin-left: 4px;
+        }
+
+        .auth-footer-link:hover {
+            color: #fbbf24;
+        }
+
+        /* Test Accounts Section */
+        .test-accounts-box {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .test-accounts-title {
+            font-size: 0.82rem;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .test-accounts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .test-btn {
+            padding: 9px 14px;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .test-btn:hover {
+            background: #334155;
+            border-color: #f59e0b;
+            color: #ffffff;
+        }
+
+        .test-btn .role-tag {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .test-btn .role-tag.admin {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .test-btn .role-tag.customer {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        /* Current Logged In Banner */
+        .logged-banner {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Navigation Bar -->
+    <header class="navbar" id="main-header">
+        <div class="nav-container">
+            <a href="/" class="nav-brand" id="brand-logo">
+                <div class="brand-icon">📚</div>
+                <span>EBOOK<span class="brand-highlight">_ONLINE</span></span>
+            </a>
+
+            <!-- Search Bar in Header -->
+            <div class="search-wrapper" style="max-width: 320px; margin: 0 15px; display: flex; align-items: center;">
+                <span style="font-size: 1rem; color: #94a3b8; margin-left: 8px;">🔍</span>
+                <input type="text" id="nav-search-input" class="search-input" style="padding: 6px 12px; font-size: 0.85rem;" placeholder="ค้นหาชื่อหนังสือ, ผู้แต่ง, หรือเนื้อหา..." onkeydown="if(event.key==='Enter') window.location.href='/?search='+encodeURIComponent(this.value)">
+            </div>
+
+            <nav class="nav-links" id="desktop-nav">
+                <a href="/#catalog" class="nav-link" id="nav-catalog-link">หนังสือทั้งหมด</a>
+                <a href="/#orders" class="nav-link" id="nav-orders-link">📋 คำสั่งซื้อของฉัน</a>
+                <a href="/auth.html" class="nav-link active" id="nav-auth-link" style="color: #fbbf24;">👤 ระบบสมาชิก</a>
+            </nav>
+
+            <div class="nav-actions">
+                <a href="/admin.html" class="btn btn-secondary btn-sm" style="color: #38bdf8;">
+                    ⚙️ Admin
+                </a>
+                <a href="/?openCart=1" class="btn btn-secondary btn-icon badge-cart" title="เปิดตะกร้า">
+                    🛒
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Center Content -->
+    <div class="auth-page-container">
+        
+        <!-- User Circle Avatar -->
+        <div class="auth-avatar-circle">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </div>
+
+        <!-- Heading -->
+        <h1 class="auth-heading">ระบบสมาชิก &amp; สิทธิ์การใช้งาน</h1>
+        <p class="auth-subheading">
+            EBOOK_ONLINE Authentication, Membership &amp; Access Control (<span class="db-tag">SQLite DB</span>)
+        </p>
+
+        <!-- Current Login Banner (if already logged in) -->
+        <div id="current-user-banner" class="logged-banner" style="display: none; width: 100%; max-width: 540px; box-sizing: border-box;">
+            <div>
+                <span style="color: #10b981; font-weight: bold;">✓ กำลังใช้งานในชื่อ:</span> 
+                <span id="banner-user-name" style="font-weight: 600;"></span>
+                <span id="banner-user-role" style="font-size: 0.75rem; background: rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 4px; margin-left: 6px;"></span>
+            </div>
+            <a href="/" class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 0.8rem;">ไปที่หน้าร้าน</a>
+        </div>
+
+        <!-- Auth Card -->
+        <div class="auth-card">
+            
+            <!-- Tabs -->
+            <div class="auth-tabs">
+                <button class="auth-tab-btn active" id="tab-btn-register" onclick="switchAuthTab('register')">
+                    <span>👤+</span> สมัครสมาชิกใหม่ (Sign Up)
+                </button>
+                <button class="auth-tab-btn" id="tab-btn-login" onclick="switchAuthTab('login')">
+                    <span>➡️</span> เข้าสู่ระบบ (Sign In)
+                </button>
+            </div>
+
+            <!-- TAB 1: REGISTER FORM -->
+            <form id="form-register" onsubmit="handleRegisterSubmit(event)">
+                <div class="auth-section-title">
+                    <span>👤+</span> สร้างบัญชีสิทธิ์ลูกค้า (Customer) เพื่อสั่งซื้อ e-Book
+                </div>
+
+                <div class="auth-form-group">
+                    <label class="auth-label">
+                        <span>👤</span> ชื่อ-นามสกุล <span class="required">*</span>
+                    </label>
+                    <input type="text" id="reg-fullname" class="auth-input" placeholder="เช่น ธนวัฒน์ นามเหง้า" required>
+                </div>
+
+                <div class="auth-form-group">
+                    <label class="auth-label">
+                        <span>✉️</span> อีเมล (Email) <span class="required">*</span>
+                    </label>
+                    <input type="email" id="reg-email" class="auth-input" placeholder="youremail@gmail.com" required>
+                </div>
+
+                <div class="auth-form-group">
+                    <label class="auth-label">
+                        <span>📞</span> เบอร์โทรศัพท์ (ไม่บังคับ)
+                    </label>
+                    <input type="tel" id="reg-phone" class="auth-input" placeholder="081-999-8877">
+                </div>
+
+                <div class="auth-row-2col auth-form-group">
+                    <div>
+                        <label class="auth-label">
+                            <span>🔒</span> รหัสผ่าน (Password) <span class="required">*</span>
+                        </label>
+                        <input type="password" id="reg-password" class="auth-input" placeholder="อย่างน้อย 6 ตัวอักษร" minlength="6" required>
+                    </div>
+                    <div>
+                        <label class="auth-label">
+                            <span>🔒</span> ยืนยันรหัสผ่าน <span class="required">*</span>
+                        </label>
+                        <input type="password" id="reg-password-confirm" class="auth-input" placeholder="ยืนยันรหัสผ่านอีกครั้ง" minlength="6" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="auth-btn-submit" id="btn-submit-reg">
+                    <span>👤+</span> สร้างบัญชีและเข้าสู่ระบบทันที
+                </button>
+
+                <div class="auth-footer-text">
+                    มีบัญชีอยู่แล้ว? <span class="auth-footer-link" onclick="switchAuthTab('login')">เข้าสู่ระบบที่นี่</span>
+                </div>
+            </form>
+
+            <!-- TAB 2: LOGIN FORM -->
+            <form id="form-login" onsubmit="handleLoginSubmit(event)" style="display: none;">
+                <div class="auth-section-title">
+                    <span>➡️</span> เข้าสู่ระบบเพื่อจัดการคำสั่งซื้อและดาวน์โหลด e-Book
+                </div>
+
+                <div class="auth-form-group">
+                    <label class="auth-label">
+                        <span>✉️</span> อีเมล หรือ ชื่อผู้ใช้งาน <span class="required">*</span>
+                    </label>
+                    <input type="text" id="login-identifier" class="auth-input" placeholder="เช่น thanawat หรือ thanawat@example.com" required>
+                </div>
+
+                <div class="auth-form-group">
+                    <label class="auth-label">
+                        <span>🔒</span> รหัสผ่าน (Password) <span class="required">*</span>
+                    </label>
+                    <input type="password" id="login-password" class="auth-input" placeholder="กรอกรหัสผ่านของคุณ" required>
+                </div>
+
+                <button type="submit" class="auth-btn-submit" id="btn-submit-login">
+                    <span>➡️</span> เข้าสู่ระบบ
+                </button>
+
+                <div class="auth-footer-text">
+                    ยังไม่มีบัญชี? <span class="auth-footer-link" onclick="switchAuthTab('register')">สมัครสมาชิกใหม่ที่นี่</span>
+                </div>
+
+                <!-- Test Accounts Quick Fill -->
+                <div class="test-accounts-box">
+                    <div class="test-accounts-title">
+                        <span>⚡</span> บัญชีทดสอบสำหรับผู้สอน (คลิกเพื่อเข้าสู่ระบบทันที)
+                    </div>
+                    <div class="test-accounts-grid">
+                        <button type="button" class="test-btn" onclick="quickLogin('thanawat', '123456')">
+                            <div>
+                                <strong>นายธนวัฒน์ นามเหง้า</strong>
+                                <div style="font-size:0.75rem; color:#94a3b8;">thanawat / 123456</div>
+                            </div>
+                            <span class="role-tag customer">ลูกค้า (Customer)</span>
+                        </button>
+                        <button type="button" class="test-btn" onclick="quickLogin('panuwat', '123456')">
+                            <div>
+                                <strong>นายภานุวัฒน์ แสงเครือ</strong>
+                                <div style="font-size:0.75rem; color:#94a3b8;">panuwat / 123456</div>
+                            </div>
+                            <span class="role-tag customer">ลูกค้า (Customer)</span>
+                        </button>
+                        <button type="button" class="test-btn" onclick="quickLogin('admin', 'admin123')">
+                            <div>
+                                <strong>ผู้ดูแลระบบสูงสุด (System Admin)</strong>
+                                <div style="font-size:0.75rem; color:#94a3b8;">admin / admin123</div>
+                            </div>
+                            <span class="role-tag admin">ผู้ดูแลระบบ (Admin)</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        // Check current session from LocalStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedName = localStorage.getItem('ebook_user_name');
+            const savedRole = localStorage.getItem('ebook_user_role');
+            if (savedName) {
+                const banner = document.getElementById('current-user-banner');
+                banner.style.display = 'flex';
+                document.getElementById('banner-user-name').textContent = savedName;
+                document.getElementById('banner-user-role').textContent = savedRole || 'Customer';
+            }
+
+            // Check URL param ?tab=login
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('tab') === 'login') {
+                switchAuthTab('login');
+            }
+        });
+
+        // Tab Switching
+        function switchAuthTab(tab) {
+            const regBtn = document.getElementById('tab-btn-register');
+            const loginBtn = document.getElementById('tab-btn-login');
+            const regForm = document.getElementById('form-register');
+            const loginForm = document.getElementById('form-login');
+
+            if (tab === 'register') {
+                regBtn.classList.add('active');
+                loginBtn.classList.remove('active');
+                regForm.style.display = 'block';
+                loginForm.style.display = 'none';
+            } else {
+                loginBtn.classList.add('active');
+                regBtn.classList.remove('active');
+                loginForm.style.display = 'block';
+                regForm.style.display = 'none';
+            }
+        }
+
+        // Show Toast
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            const icon = type === 'success' ? '✅' : '❌';
+            toast.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Handle Registration
+        async function handleRegisterSubmit(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('reg-fullname').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const passwordConfirm = document.getElementById('reg-password-confirm').value;
+
+            if (password !== passwordConfirm) {
+                showToast('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit-reg');
+            btn.disabled = true;
+            btn.innerHTML = '🔄 กำลังสร้างบัญชี...';
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        email: email,
+                        phone: phone,
+                        password: password
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || 'เกิดข้อผิดพลาดในการสมัครสมาชิก');
+                }
+
+                showToast('สร้างบัญชีสำเร็จ! กำลังเข้าสู่ระบบ...', 'success');
+
+                // Save to localStorage
+                localStorage.setItem('ebook_user_id', data.user.user_id);
+                localStorage.setItem('ebook_user_name', data.user.full_name);
+                localStorage.setItem('ebook_user_role', data.user.role_name || 'customer');
+
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1200);
+
+            } catch (err) {
+                showToast(err.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<span>👤+</span> สร้างบัญชีและเข้าสู่ระบบทันที';
+            }
+        }
+
+        // Handle Login
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            const identifier = document.getElementById('login-identifier').value.trim();
+            const password = document.getElementById('login-password').value;
+            await executeLogin(identifier, password);
+        }
+
+        // Quick login for test accounts
+        async function quickLogin(username, password) {
+            document.getElementById('login-identifier').value = username;
+            document.getElementById('login-password').value = password;
+            await executeLogin(username, password);
+        }
+
+        async function executeLogin(username, password) {
+            const btn = document.getElementById('btn-submit-login');
+            btn.disabled = true;
+            btn.innerHTML = '🔄 กำลังเข้าสู่ระบบ...';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                }
+
+                showToast(`ยินดีต้อนรับคุณ ${data.user.full_name}!`, 'success');
+
+                // Save to localStorage
+                localStorage.setItem('ebook_user_id', data.user.user_id);
+                localStorage.setItem('ebook_user_name', data.user.full_name);
+                localStorage.setItem('ebook_user_role', data.user.role_name || 'customer');
+
+                setTimeout(() => {
+                    if (data.user.role_name === 'admin' || data.user.role_id === 2) {
+                        window.location.href = '/admin.html';
+                    } else {
+                        window.location.href = '/';
+                    }
+                }, 1000);
+
+            } catch (err) {
+                showToast(err.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<span>➡️</span> เข้าสู่ระบบ';
+            }
+        }
+    </script>
+</body>
+</html>
