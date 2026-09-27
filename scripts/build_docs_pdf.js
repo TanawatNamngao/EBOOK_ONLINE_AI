@@ -17,7 +17,7 @@ const filesToConvert = [
 ];
 
 const cssTemplate = `
-@import url('https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Fira+Code:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Fira+Code:wght@400;500&display=swap');
 
 @page {
     size: A4 portrait;
@@ -25,9 +25,9 @@ const cssTemplate = `
 }
 
 body {
-    font-family: 'Sarabun', 'Leelawadee', 'Segoe UI', Tahoma, sans-serif;
-    font-size: 11pt;
-    line-height: 1.65;
+    font-family: 'TH Sarabun New', 'TH SarabunPSK', 'Sarabun', 'Leelawadee UI', 'Leelawadee', Tahoma, sans-serif;
+    font-size: 13pt;
+    line-height: 1.6;
     color: #1e293b;
     background: #ffffff;
     margin: 0;
@@ -256,7 +256,7 @@ for (const filename of filesToConvert) {
     console.log(`📄 Rendering ${filename} -> ${baseName}.pdf...`);
 
     try {
-        const cmd = `"${edgePath}" --headless --disable-gpu --run-all-compositor-stages-before-draw --print-to-pdf="${pdfPath}" "${fileUrl}"`;
+        const cmd = `"${edgePath}" --headless --disable-gpu --no-pdf-header-footer --run-all-compositor-stages-before-draw --print-to-pdf="${pdfPath}" "${fileUrl}"`;
         execSync(cmd, { stdio: 'ignore' });
         
         if (fs.existsSync(pdfPath)) {

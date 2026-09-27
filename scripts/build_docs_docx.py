@@ -26,6 +26,18 @@ files_to_convert = [
     '05_ANALYTICS_REPORTS.md'
 ]
 
+def apply_sarabun_font(run, size=Pt(16), bold=False, italic=False, color=None):
+    font_name = 'TH Sarabun New'
+    run.font.name = font_name
+    run.font.size = size
+    run.bold = bold
+    run.italic = italic
+    if color:
+        run.font.color.rgb = color
+    rPr = run._r.get_or_add_rPr()
+    rFonts = parse_xml(f'<w:rFonts {nsdecls("w")} w:ascii="{font_name}" w:hAnsi="{font_name}" w:cs="{font_name}"/>')
+    rPr.append(rFonts)
+
 def set_cell_background(cell, color_hex):
     shading_elm = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{color_hex}"/>')
     cell._tc.get_or_add_tcPr().append(shading_elm)
@@ -40,25 +52,13 @@ def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
         tcMar.append(node)
     tcPr.append(tcMar)
 
-def add_styled_paragraph(doc, text, style='Normal', space_after=6, bold=False, italic=False, color=None, font_size=Pt(11)):
-    p = doc.add_paragraph(style=style)
-    p.paragraph_format.space_after = Pt(space_after)
-    run = p.add_run(text)
-    run.font.name = 'Sarabun'
-    run.font.size = font_size
-    run.bold = bold
-    run.italic = italic
-    if color:
-        run.font.color.rgb = color
-    return p
-
 def convert_md_to_docx(md_path, docx_path):
     with open(md_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
     doc = Document()
 
-    # Set page margins
+    # Set page margins A4 standard
     for section in doc.sections:
         section.top_margin = Inches(1)
         section.bottom_margin = Inches(1)
@@ -101,25 +101,20 @@ def convert_md_to_docx(md_path, docx_path):
                 cell_text = row[col_idx] if col_idx < len(row) else ''
                 cell = table.cell(row_idx, col_idx)
                 cell.text = cell_text
-                set_cell_margins(cell, top=120, bottom=120, left=150, right=150)
+                set_cell_margins(cell, top=100, bottom=100, left=130, right=130)
 
                 # Format Header Row
                 if row_idx == 0:
                     set_cell_background(cell, '1E3A8A')
                     for p in cell.paragraphs:
                         for run in p.runs:
-                            run.font.name = 'Sarabun'
-                            run.font.size = Pt(10)
-                            run.font.bold = True
-                            run.font.color.rgb = RGBColor(255, 255, 255)
+                            apply_sarabun_font(run, size=Pt(14), bold=True, color=RGBColor(255, 255, 255))
                 else:
                     bg = 'F8FAFC' if row_idx % 2 == 1 else 'FFFFFF'
                     set_cell_background(cell, bg)
                     for p in cell.paragraphs:
                         for run in p.runs:
-                            run.font.name = 'Sarabun'
-                            run.font.size = Pt(9.5)
-                            run.font.color.rgb = RGBColor(30, 41, 59)
+                            apply_sarabun_font(run, size=Pt(13.5), color=RGBColor(30, 41, 59))
 
         tblPr = table._tbl.tblPr
         borders = parse_xml(
@@ -133,7 +128,7 @@ def convert_md_to_docx(md_path, docx_path):
             '</w:tblBorders>'
         )
         tblPr.append(borders)
-        doc.add_paragraph().paragraph_format.space_after = Pt(6)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     def flush_code():
         nonlocal code_lines
@@ -146,17 +141,17 @@ def convert_md_to_docx(md_path, docx_path):
         tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
         cell = tbl.cell(0, 0)
         set_cell_background(cell, '0F172A')
-        set_cell_margins(cell, top=140, bottom=140, left=200, right=200)
+        set_cell_margins(cell, top=120, bottom=120, left=180, right=180)
 
         p = cell.paragraphs[0]
         p.paragraph_format.space_after = Pt(0)
         p.paragraph_format.line_spacing = 1.15
         run = p.add_run(code_text.rstrip())
         run.font.name = 'Consolas'
-        run.font.size = Pt(9)
+        run.font.size = Pt(10)
         run.font.color.rgb = RGBColor(241, 245, 249)
 
-        doc.add_paragraph().paragraph_format.space_after = Pt(6)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     for line in lines:
         stripped = line.strip()
@@ -177,7 +172,7 @@ def convert_md_to_docx(md_path, docx_path):
             is_in_cover = True
             continue
 
-        # Handle HTML image tag
+        # Handle HTML image tag <img src="..."
         img_match = re.search(r'<img\s+[^>]*src=["\']([^"\']+)["\']', stripped)
         if img_match:
             img_rel = urllib.parse.unquote(img_match.group(1))
@@ -188,8 +183,8 @@ def convert_md_to_docx(md_path, docx_path):
                     flush_table()
                 p = doc.add_paragraph()
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                p.paragraph_format.space_before = Pt(14)
-                p.paragraph_format.space_after = Pt(6)
+                p.paragraph_format.space_before = Pt(12)
+                p.paragraph_format.space_after = Pt(4)
                 is_logo = 'logo' in img_rel.lower()
                 width = Inches(1.8) if is_logo else Inches(5.8)
                 p.add_run().add_picture(img_full, width=width)
@@ -207,25 +202,30 @@ def convert_md_to_docx(md_path, docx_path):
                     flush_table()
                 p = doc.add_paragraph()
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                p.paragraph_format.space_before = Pt(14)
+                p.paragraph_format.space_before = Pt(12)
                 p.paragraph_format.space_after = Pt(4)
                 is_logo = 'logo' in img_rel.lower()
                 width = Inches(1.8) if is_logo else Inches(5.8)
                 p.add_run().add_picture(img_full, width=width)
+                if caption:
+                    p_cap = doc.add_paragraph()
+                    p_cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    p_cap.paragraph_format.space_before = Pt(2)
+                    p_cap.paragraph_format.space_after = Pt(10)
+                    run = p_cap.add_run(caption)
+                    apply_sarabun_font(run, size=Pt(13.5), italic=True, color=RGBColor(100, 116, 139))
             continue
 
-        # Handle image caption in markdown *ภาพที่ ...*
-        if stripped.startswith('*ภาพที่') and stripped.endswith('*'):
-            cap_text = stripped[1:-1]
+        # Handle image caption in markdown *ภาพที่ ...* or <em>...</em>
+        cap_match = re.search(r'(?:\*|<em>)(ภาพ(?:ที่|ประกอบ)[^*<]+)(?:\*|</em>)', stripped)
+        if cap_match:
+            cap_text = cap_match.group(1).strip()
             p_cap = doc.add_paragraph()
             p_cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p_cap.paragraph_format.space_before = Pt(2)
-            p_cap.paragraph_format.space_after = Pt(14)
+            p_cap.paragraph_format.space_after = Pt(10)
             run = p_cap.add_run(cap_text)
-            run.font.name = 'Sarabun'
-            run.font.size = Pt(9.5)
-            run.font.italic = True
-            run.font.color.rgb = RGBColor(100, 116, 139)
+            apply_sarabun_font(run, size=Pt(13.5), italic=True, color=RGBColor(100, 116, 139))
             continue
 
         # Skip generic html helper tags
@@ -260,29 +260,23 @@ def convert_md_to_docx(md_path, docx_path):
         if not stripped:
             continue
 
-        # Headings
+        # Headings (Standard TH Sarabun New sizes: H1=20pt, H2=18pt, H3=16pt)
         if stripped.startswith('# '):
             p = doc.add_heading(level=1)
             p.paragraph_format.space_before = Pt(14)
-            p.paragraph_format.space_after = Pt(8)
-            if is_in_cover:
-                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run = p.add_run(stripped[2:])
-            run.font.name = 'Sarabun'
-            run.font.size = Pt(19 if is_in_cover else 18)
-            run.font.bold = True
-            run.font.color.rgb = RGBColor(15, 23, 42)
-        elif stripped.startswith('## '):
-            p = doc.add_heading(level=2)
-            p.paragraph_format.space_before = Pt(12)
             p.paragraph_format.space_after = Pt(6)
             if is_in_cover:
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = p.add_run(stripped[2:])
+            apply_sarabun_font(run, size=Pt(22 if is_in_cover else 20), bold=True, color=RGBColor(15, 23, 42))
+        elif stripped.startswith('## '):
+            p = doc.add_heading(level=2)
+            p.paragraph_format.space_before = Pt(12)
+            p.paragraph_format.space_after = Pt(4)
+            if is_in_cover:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             run = p.add_run(stripped[3:])
-            run.font.name = 'Sarabun'
-            run.font.size = Pt(14)
-            run.font.bold = True
-            run.font.color.rgb = RGBColor(30, 58, 138)
+            apply_sarabun_font(run, size=Pt(18), bold=True, color=RGBColor(30, 58, 138))
         elif stripped.startswith('### '):
             p = doc.add_heading(level=3)
             p.paragraph_format.space_before = Pt(10)
@@ -290,76 +284,62 @@ def convert_md_to_docx(md_path, docx_path):
             if is_in_cover:
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             run = p.add_run(stripped[4:])
-            run.font.name = 'Sarabun'
-            run.font.size = Pt(13)
-            run.font.bold = True
-            run.font.color.rgb = RGBColor(37, 99, 235 if is_in_cover else 51)
+            apply_sarabun_font(run, size=Pt(16), bold=True, color=RGBColor(37, 99, 235 if is_in_cover else 51))
         elif stripped.startswith('#### '):
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(8)
-            p.paragraph_format.space_after = Pt(4)
+            p.paragraph_format.space_after = Pt(3)
             run = p.add_run(stripped[5:])
-            run.font.name = 'Sarabun'
-            run.font.size = Pt(11.5)
-            run.font.bold = True
-            run.font.color.rgb = RGBColor(71, 85, 105)
+            apply_sarabun_font(run, size=Pt(16), bold=True, color=RGBColor(71, 85, 105))
         elif stripped.startswith('- ') or stripped.startswith('* '):
             bullet_text = stripped[2:]
             p = doc.add_paragraph(style='List Bullet')
-            p.paragraph_format.space_after = Pt(3)
+            p.paragraph_format.space_after = Pt(2)
             p.paragraph_format.line_spacing = 1.15
             run = p.add_run(bullet_text.replace('**', ''))
-            run.font.name = 'Sarabun'
-            run.font.size = Pt(10.5)
-            run.font.color.rgb = RGBColor(30, 41, 59)
+            apply_sarabun_font(run, size=Pt(16), color=RGBColor(30, 41, 59))
         elif re.match(r'^\d+\.\s', stripped):
             match = re.match(r'^\d+\.\s', stripped)
             text_val = stripped[match.end():]
             p = doc.add_paragraph(style='List Number')
-            p.paragraph_format.space_after = Pt(3)
+            p.paragraph_format.space_after = Pt(2)
             run = p.add_run(text_val.replace('**', ''))
-            run.font.name = 'Sarabun'
-            run.font.size = Pt(10.5)
-            run.font.color.rgb = RGBColor(30, 41, 59)
+            apply_sarabun_font(run, size=Pt(16), color=RGBColor(30, 41, 59))
         elif stripped.startswith('>'):
             quote_text = stripped[1:].strip()
             tbl = doc.add_table(rows=1, cols=1)
             tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
             cell = tbl.cell(0, 0)
             set_cell_background(cell, 'EFF6FF')
-            set_cell_margins(cell, top=100, bottom=100, left=150, right=150)
+            set_cell_margins(cell, top=80, bottom=80, left=140, right=140)
             p = cell.paragraphs[0]
             p.paragraph_format.space_after = Pt(0)
             run = p.add_run(quote_text.replace('**', ''))
-            run.font.name = 'Sarabun'
-            run.font.size = Pt(10)
-            run.font.color.rgb = RGBColor(30, 58, 138)
+            apply_sarabun_font(run, size=Pt(15), color=RGBColor(30, 58, 138))
             doc.add_paragraph().paragraph_format.space_after = Pt(4)
         elif stripped.startswith('---'):
             p = doc.add_paragraph()
-            p.paragraph_format.space_before = Pt(6)
-            p.paragraph_format.space_after = Pt(6)
+            p.paragraph_format.space_before = Pt(4)
+            p.paragraph_format.space_after = Pt(4)
             run = p.add_run('__________________________________________________________________________')
             run.font.color.rgb = RGBColor(203, 213, 225)
-            run.font.size = Pt(9)
+            run.font.size = Pt(8)
         else:
             p = doc.add_paragraph()
             if is_in_cover:
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            p.paragraph_format.space_after = Pt(6)
-            p.paragraph_format.line_spacing = 1.25
+            p.paragraph_format.space_after = Pt(4)
+            p.paragraph_format.line_spacing = 1.2
             
             clean_text = stripped
             parts = re.split(r'(\*\*.*?\*\*)', clean_text)
             for part in parts:
                 if part.startswith('**') and part.endswith('**'):
                     run = p.add_run(part[2:-2])
-                    run.bold = True
+                    apply_sarabun_font(run, size=Pt(16), bold=True, color=RGBColor(30, 41, 59))
                 else:
                     run = p.add_run(part)
-                run.font.name = 'Sarabun'
-                run.font.size = Pt(11)
-                run.font.color.rgb = RGBColor(30, 41, 59)
+                    apply_sarabun_font(run, size=Pt(16), color=RGBColor(30, 41, 59))
 
     if in_table:
         flush_table()
@@ -368,7 +348,7 @@ def convert_md_to_docx(md_path, docx_path):
 
     doc.save(docx_path)
 
-print('🚀 Converting Markdown documents to Microsoft Word (.docx)...')
+print('🚀 Converting Markdown documents to Microsoft Word (.docx) with TH Sarabun New font...')
 
 for fname in files_to_convert:
     m_path = os.path.join(docs_dir, fname)
@@ -384,4 +364,4 @@ for fname in files_to_convert:
     except Exception as e:
         print(f'  ❌ Error creating {base}.docx: {e}')
 
-print('🎉 All Word (.docx) files created successfully!')
+print('🎉 All Word (.docx) files created successfully with TH Sarabun New font!')
