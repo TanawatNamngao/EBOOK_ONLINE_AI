@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import urllib.parse
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -68,16 +69,15 @@ def convert_md_to_docx(md_path, docx_path):
     code_lines = []
     in_table = False
     table_lines = []
+    is_in_cover = False
 
     def flush_table():
         nonlocal table_lines
         if not table_lines:
             return
         
-        # Parse table lines
         rows_data = []
         for line in table_lines:
-            # Skip separator line like |:---|:---|
             if re.match(r'^\s*\|?\s*[-:]+[-| :]*\|?\s*$', line):
                 continue
             cells = [c.strip() for c in line.split('|')]
@@ -121,7 +121,6 @@ def convert_md_to_docx(md_path, docx_path):
                             run.font.size = Pt(9.5)
                             run.font.color.rgb = RGBColor(30, 41, 59)
 
-        # Set borders via XML
         tblPr = table._tbl.tblPr
         borders = parse_xml(
             f'<w:tblBorders {nsdecls("w")}>'
@@ -162,6 +161,77 @@ def convert_md_to_docx(md_path, docx_path):
     for line in lines:
         stripped = line.strip()
 
+        # Handle Page Break
+        if '<div class="page-break">' in stripped or 'page-break-after' in stripped:
+            if in_table:
+                in_table = False
+                flush_table()
+            if in_code_block:
+                in_code_block = False
+                flush_code()
+            doc.add_page_break()
+            is_in_cover = False
+            continue
+
+        if '<div class="cover-page"' in stripped:
+            is_in_cover = True
+            continue
+
+        # Handle HTML image tag
+        img_match = re.search(r'<img\s+[^>]*src=["\']([^"\']+)["\']', stripped)
+        if img_match:
+            img_rel = urllib.parse.unquote(img_match.group(1))
+            img_full = os.path.normpath(os.path.join(docs_dir, img_rel))
+            if os.path.exists(img_full):
+                if in_table:
+                    in_table = False
+                    flush_table()
+                p = doc.add_paragraph()
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                p.paragraph_format.space_before = Pt(14)
+                p.paragraph_format.space_after = Pt(6)
+                is_logo = 'logo' in img_rel.lower()
+                width = Inches(1.8) if is_logo else Inches(5.8)
+                p.add_run().add_picture(img_full, width=width)
+            continue
+
+        # Handle Markdown image ![alt](path)
+        md_img_match = re.search(r'!\[(.*?)\]\((.*?)\)', stripped)
+        if md_img_match:
+            caption = md_img_match.group(1)
+            img_rel = urllib.parse.unquote(md_img_match.group(2))
+            img_full = os.path.normpath(os.path.join(docs_dir, img_rel))
+            if os.path.exists(img_full):
+                if in_table:
+                    in_table = False
+                    flush_table()
+                p = doc.add_paragraph()
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                p.paragraph_format.space_before = Pt(14)
+                p.paragraph_format.space_after = Pt(4)
+                is_logo = 'logo' in img_rel.lower()
+                width = Inches(1.8) if is_logo else Inches(5.8)
+                p.add_run().add_picture(img_full, width=width)
+            continue
+
+        # Handle image caption in markdown *ภาพที่ ...*
+        if stripped.startswith('*ภาพที่') and stripped.endswith('*'):
+            cap_text = stripped[1:-1]
+            p_cap = doc.add_paragraph()
+            p_cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p_cap.paragraph_format.space_before = Pt(2)
+            p_cap.paragraph_format.space_after = Pt(14)
+            run = p_cap.add_run(cap_text)
+            run.font.name = 'Sarabun'
+            run.font.size = Pt(9.5)
+            run.font.italic = True
+            run.font.color.rgb = RGBColor(100, 116, 139)
+            continue
+
+        # Skip generic html helper tags
+        if stripped.startswith('<div') or stripped.startswith('</div') or stripped in ['<br>', '<br><br>', '<br><br><br>']:
+            continue
+
         # Handle Code Block fences
         if stripped.startswith('```'):
             if in_code_block:
@@ -195,29 +265,35 @@ def convert_md_to_docx(md_path, docx_path):
             p = doc.add_heading(level=1)
             p.paragraph_format.space_before = Pt(14)
             p.paragraph_format.space_after = Pt(8)
+            if is_in_cover:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             run = p.add_run(stripped[2:])
             run.font.name = 'Sarabun'
-            run.font.size = Pt(20)
+            run.font.size = Pt(19 if is_in_cover else 18)
             run.font.bold = True
             run.font.color.rgb = RGBColor(15, 23, 42)
         elif stripped.startswith('## '):
             p = doc.add_heading(level=2)
             p.paragraph_format.space_before = Pt(12)
             p.paragraph_format.space_after = Pt(6)
+            if is_in_cover:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             run = p.add_run(stripped[3:])
             run.font.name = 'Sarabun'
-            run.font.size = Pt(15)
+            run.font.size = Pt(14)
             run.font.bold = True
             run.font.color.rgb = RGBColor(30, 58, 138)
         elif stripped.startswith('### '):
             p = doc.add_heading(level=3)
             p.paragraph_format.space_before = Pt(10)
             p.paragraph_format.space_after = Pt(4)
+            if is_in_cover:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             run = p.add_run(stripped[4:])
             run.font.name = 'Sarabun'
             run.font.size = Pt(13)
             run.font.bold = True
-            run.font.color.rgb = RGBColor(51, 65, 85)
+            run.font.color.rgb = RGBColor(37, 99, 235 if is_in_cover else 51)
         elif stripped.startswith('#### '):
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(8)
@@ -229,7 +305,6 @@ def convert_md_to_docx(md_path, docx_path):
             run.font.color.rgb = RGBColor(71, 85, 105)
         elif stripped.startswith('- ') or stripped.startswith('* '):
             bullet_text = stripped[2:]
-            # Clean bold markers
             p = doc.add_paragraph(style='List Bullet')
             p.paragraph_format.space_after = Pt(3)
             p.paragraph_format.line_spacing = 1.15
@@ -269,10 +344,11 @@ def convert_md_to_docx(md_path, docx_path):
             run.font.size = Pt(9)
         else:
             p = doc.add_paragraph()
+            if is_in_cover:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.paragraph_format.space_after = Pt(6)
             p.paragraph_format.line_spacing = 1.25
             
-            # Simple bold handler
             clean_text = stripped
             parts = re.split(r'(\*\*.*?\*\*)', clean_text)
             for part in parts:

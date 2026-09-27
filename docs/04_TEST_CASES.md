@@ -49,6 +49,21 @@
 | **TC-09** | **สินค้าไม่พร้อมขาย (Unpublished Book Gate)** | ผู้ใช้พยายามยิง API หยิบหนังสือที่ปิดการขาย (`is_published = 0`) ใส่ตะกร้า | ระบบต้องไม่อนุญาตให้เพิ่มลงตะกร้า และตอบกลับแจ้งสถานะสินค้าไม่พร้อมขาย | ระบบส่ง HTTP 400 แจ้ง "หนังสือเล่มนี้ไม่พร้อมจำหน่าย" | **ผ่าน (PASS)** | ตรวจสอบเงื่อนไข `is_published = 1` ทั้งใน API Backend และตัวกรองหน้าร้าน |
 | **TC-10** | **🔒 เปิดดาวน์โหลดก่อนยืนยัน (Download Gate Security)** | พยายามเปิด URL ดาวน์โหลด `/api/download/:token` ของคำสั่งซื้อที่ยังเป็น `pending` | **ระบบต้องปฏิเสธการเข้าถึงอย่างเด็ดขาด** (HTTP 403 Forbidden) และไม่เปิดเผยไฟล์ | ระบบส่ง HTTP 403 Forbidden แจ้งว่าคำสั่งซื้อยังไม่ได้รับการยืนยัน | **ผ่าน (PASS)** | ตรวจสอบเงื่อนไข `orders.status = 'confirmed' AND payments.payment_status = 'verified'` ก่อนส่งไฟล์ |
 
+<div align="center">
+<img src="รูปภาพประกอบรายงาน/Screenshot (335).png" alt="การตรวจสอบ Validation Rules" width="92%">
+<br><em>ภาพประกอบที่ 1: ระบบตรวจสอบเงื่อนไขความถูกต้อง Validation Rules ในการสมัครสมาชิก (TC-01, TC-02, TC-07)</em>
+</div>
+
+<div align="center">
+<img src="รูปภาพประกอบรายงาน/Screenshot (336).png" alt="Security Download Gate" width="92%">
+<br><em>ภาพประกอบที่ 2: หน้าต่างประวัติคำสั่งซื้อและการล็อกสิทธิ์ดาวน์โหลด E-Book ปลอดภัย (TC-04, TC-06, TC-10)</em>
+</div>
+
+<div align="center">
+<img src="รูปภาพประกอบรายงาน/Screenshot (340).png" alt="Order Verification" width="92%">
+<br><em>ภาพประกอบที่ 3: ระบบจัดการคำสั่งซื้อ ตรวจสอบสลิป และการอนุมัติสิทธิ์ในระบบหลังบ้าน (TC-05)</em>
+</div>
+
 ---
 
 ## 3. สรุปผลการประเมินคุณภาพข้อมูล (Quality Assessment)
