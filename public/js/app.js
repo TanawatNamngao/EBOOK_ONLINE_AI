@@ -156,8 +156,9 @@ function getCoverDataUri(title, category, id) {
         ['#1e293b', '#0ea5e9']
     ];
     const pair = colors[(id - 1) % colors.length] || ['#312e81', '#6366f1'];
-    const safeTitle = (title || 'E-BOOK').substring(0, 30);
-    const safeCat = (category || 'EBOOK').substring(0, 8).toUpperCase();
+    const escapeXml = (str) => (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const safeTitle = escapeXml((title || 'E-BOOK').substring(0, 30));
+    const safeCat = escapeXml((category || 'EBOOK').substring(0, 8).toUpperCase());
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 580" width="400" height="580">
       <defs>
         <linearGradient id="fallback_grad_${id}" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -167,17 +168,20 @@ function getCoverDataUri(title, category, id) {
       </defs>
       <rect width="400" height="580" rx="16" fill="${pair[0]}" />
       <rect width="400" height="580" rx="16" fill="url(#fallback_grad_${id})" />
-      <rect x="0" y="0" width="28" height="580" fill="rgba(0,0,0,0.25)" />
-      <rect x="46" y="44" width="80" height="26" rx="6" fill="rgba(255,255,255,0.25)" />
-      <text x="86" y="62" fill="#ffffff" font-family="sans-serif" font-weight="bold" font-size="12" text-anchor="middle">${safeCat}</text>
-      <text x="340" y="64" fill="#fbbf24" font-family="sans-serif" font-weight="bold" font-size="18" text-anchor="middle">★</text>
-      <g transform="translate(48, 230)">
-        <text x="0" y="0" fill="#ffffff" font-family="sans-serif" font-weight="bold" font-size="22">${safeTitle}</text>
-        <line x1="0" y1="40" x2="100" y2="40" stroke="rgba(255,255,255,0.6)" stroke-width="3" stroke-linecap="round"/>
+      <rect x="0" y="0" width="28" height="580" fill="rgba(0,0,0,0.3)" />
+      <line x1="28" y1="0" x2="28" y2="580" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+      <rect x="46" y="44" width="80" height="26" rx="6" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+      <text x="86" y="62" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="12" text-anchor="middle">${safeCat}</text>
+      <text x="340" y="64" fill="#fbbf24" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="18" text-anchor="middle">★</text>
+      <circle cx="200" cy="190" r="45" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-dasharray="4 4" />
+      <text x="200" y="200" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="32" text-anchor="middle">📖</text>
+      <g transform="translate(48, 280)">
+        <text x="0" y="0" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="20">${safeTitle}</text>
+        <line x1="0" y1="28" x2="90" y2="28" stroke="rgba(255,255,255,0.6)" stroke-width="3" stroke-linecap="round"/>
       </g>
-      <rect x="46" y="480" width="308" height="46" rx="10" fill="rgba(0,0,0,0.35)" />
-      <text x="64" y="509" fill="rgba(255,255,255,0.85)" font-family="sans-serif" font-size="13">DIGITAL E-BOOK EDITION</text>
-      <text x="334" y="509" fill="#fbbf24" font-family="sans-serif" font-weight="bold" font-size="14" text-anchor="end">2026</text>
+      <rect x="46" y="480" width="308" height="46" rx="10" fill="rgba(0,0,0,0.4)" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+      <text x="64" y="509" fill="rgba(255,255,255,0.85)" font-family="'Segoe UI', sans-serif" font-size="13">DIGITAL E-BOOK EDITION</text>
+      <text x="334" y="509" fill="#fbbf24" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="14" text-anchor="end">2026</text>
     </svg>`;
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
