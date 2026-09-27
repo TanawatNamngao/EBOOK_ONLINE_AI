@@ -12,8 +12,38 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+// Static Files with custom headers for SVG/Slip images
+app.use(express.static(path.join(__dirname, 'public'), {
+    setHeaders: (res, filePath) => {
+        if (filePath.includes('slips') || filePath.includes('covers')) {
+            try {
+                const fd = fs.openSync(filePath, 'r');
+                const buf = Buffer.alloc(40);
+                fs.readSync(fd, buf, 0, 40, 0);
+                fs.closeSync(fd);
+                const start = buf.toString('utf8');
+                if (start.includes('<svg') || start.includes('<?xml')) {
+                    res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+                }
+            } catch (err) {}
+        }
+    }
+}));
+
+// Explicit handler for /assets/slips to ensure 100% correct MIME type
+app.get('/assets/slips/:file', (req, res, next) => {
+    const filePath = path.join(__dirname, 'public', 'assets', 'slips', req.params.file);
+    if (fs.existsSync(filePath)) {
+        try {
+            const content = fs.readFileSync(filePath, 'utf8');
+            if (content.includes('<svg') || content.includes('<?xml')) {
+                res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+                return res.send(content);
+            }
+        } catch (e) {}
+    }
+    next();
+});
 
 // Configure Multer for mock slip uploads
 const slipStorage = multer.diskStorage({

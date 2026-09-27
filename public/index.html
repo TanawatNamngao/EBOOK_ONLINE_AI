@@ -170,8 +170,8 @@
 
             <!-- Simulated QR Section -->
             <div style="text-align:center; padding:16px; background:#ffffff; border-radius:var(--radius-md); margin-bottom:20px;">
-                <div style="color:#0f172a; font-weight:bold; font-size:0.95rem; margin-bottom:6px;">สแกนเพื่อจำลองการชำระเงิน</div>
-                <img src="/assets/covers/default.svg" id="mock-qr-img" style="width:160px; height:160px; object-fit:contain; border-radius:8px; border:2px solid #e2e8f0;" alt="Mock QR Code">
+                <div style="color:#0f172a; font-weight:bold; font-size:0.95rem; margin-bottom:6px;">สแกนเพื่อจำลองการชำระเงิน (PromptPay)</div>
+                <img src="/assets/promptpay_qr.svg" id="mock-qr-img" style="width:160px; height:160px; object-fit:contain; border-radius:8px; border:2px solid #e2e8f0;" alt="PromptPay QR Code">
                 <div style="color:#64748b; font-size:0.8rem; margin-top:6px;">ยอดชำระ: <strong id="checkout-qr-amount" style="color:#0369a1; font-size:1.1rem;">฿0.00</strong></div>
             </div>
 
@@ -186,6 +186,10 @@
                 </div>
                 <div id="slip-preview-status" style="font-size:0.85rem; color:var(--success); margin-top:6px; display:none;">
                     ✓ แนบหลักฐานสลิปจำลองเรียบร้อย พร้อมแจ้งชำระเงิน
+                </div>
+                <div id="slip-preview-container" style="display:none; margin-top:12px; text-align:center; background:rgba(15,23,42,0.4); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:6px;">ตัวอย่างสลิปที่แนบ:</div>
+                    <img id="checkout-slip-preview-img" src="" style="max-width:180px; max-height:240px; border-radius:8px; border:1px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.3); display:inline-block;" alt="ตัวอย่างสลิป">
                 </div>
             </div>
 
@@ -209,6 +213,25 @@
 
             <div id="orders-list-container" style="display:flex; flex-direction:column; gap:16px;">
                 <!-- Orders rendered via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicated Slip Viewer Modal (หน้าร้าน) -->
+    <div class="modal-overlay" id="store-slip-modal" style="z-index: 200;">
+        <div class="modal-card" style="max-width: 480px; text-align: center; padding: 24px;">
+            <button class="modal-close" onclick="closeStoreSlipModal()">✕</button>
+            <h3 style="margin-bottom: 12px; font-size: 1.15rem;" id="store-slip-modal-title">📄 หลักฐานสลิปการชำระเงิน</h3>
+            <div style="background:#ffffff; padding:12px; border-radius:12px; margin-bottom:16px; border:1px solid #cbd5e1; display:flex; justify-content:center;">
+                <img id="store-slip-modal-img" src="" style="width: 100%; max-height: 480px; object-fit: contain; border-radius: 8px;" alt="สลิปจำลอง">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <a id="store-slip-download-link" href="" target="_blank" class="btn btn-secondary btn-sm">
+                    🔍 เปิดแท็บใหม่ / ดาวน์โหลด
+                </a>
+                <button class="btn btn-primary btn-sm" onclick="closeStoreSlipModal()">
+                    ปิดหน้าต่าง
+                </button>
             </div>
         </div>
     </div>

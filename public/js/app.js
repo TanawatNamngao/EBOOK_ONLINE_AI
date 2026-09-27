@@ -458,11 +458,49 @@ function closeCheckoutModal() {
 }
 
 function usePrebuiltMockSlip() {
-    activeMockSlipUrl = `/assets/slips/slip_mock_0${Math.floor(Math.random() * 9 + 1)}.png`;
+    const slipNum = Math.floor(Math.random() * 9 + 1);
+    activeMockSlipUrl = `/assets/slips/slip_mock_0${slipNum}.png`;
     const status = document.getElementById('slip-preview-status');
-    status.style.display = 'block';
-    status.textContent = `✓ แนบสลิปจำลองสำเร็จ (${activeMockSlipUrl})`;
-    showToast('แนบหลักฐานการชำระเงินจำลองแล้ว');
+    const container = document.getElementById('slip-preview-container');
+    const previewImg = document.getElementById('checkout-slip-preview-img');
+    
+    if (status) {
+        status.style.display = 'block';
+        status.innerHTML = `✓ แนบสลิปจำลองสำเร็จ (พร้อมเพย์/ธนาคาร)`;
+    }
+    if (previewImg && container) {
+        previewImg.src = activeMockSlipUrl;
+        container.style.display = 'block';
+    }
+    showToast('แนบหลักฐานสลิปจำลองเรียบร้อยแล้ว');
+}
+
+// In-app Slip Viewer Modal
+function viewSlipModal(url, orderNum) {
+    const modal = document.getElementById('store-slip-modal');
+    if (!modal) {
+        window.open(url, '_blank');
+        return;
+    }
+    const titleEl = document.getElementById('store-slip-modal-title');
+    const imgEl = document.getElementById('store-slip-modal-img');
+    const linkEl = document.getElementById('store-slip-download-link');
+
+    if (titleEl) titleEl.textContent = `📄 หลักฐานสลิปคำสั่งซื้อ: ${orderNum || ''}`;
+    if (imgEl) {
+        imgEl.src = url;
+        imgEl.onerror = () => {
+            imgEl.onerror = null;
+            imgEl.src = '/assets/slips/slip_mock_01.svg';
+        };
+    }
+    if (linkEl) linkEl.href = url;
+    modal.classList.add('active');
+}
+
+function closeStoreSlipModal() {
+    const modal = document.getElementById('store-slip-modal');
+    if (modal) modal.classList.remove('active');
 }
 
 async function submitOrderAndPayment() {
@@ -625,7 +663,7 @@ async function loadMyOrders() {
 
                 <div style="font-size:0.82rem; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
                     <span>ช่องทาง: ${ord.payment_method === 'promptpay_qr' ? 'PromptPay QR' : 'โอนเงิน'}</span>
-                    ${ord.slip_image_url ? `<a href="${ord.slip_image_url}" target="_blank" style="color:#38bdf8; text-decoration:underline;">🔍 ดูหลักฐานสลิปจำลอง</a>` : ''}
+                    ${ord.slip_image_url ? `<button type="button" class="btn btn-secondary btn-sm" onclick="viewSlipModal('${ord.slip_image_url}', '${ord.order_number}')" style="font-size:0.8rem; padding:4px 10px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🔍 ดูหลักฐานสลิปจำลอง</button>` : ''}
                 </div>
             `;
             container.appendChild(ordCard);

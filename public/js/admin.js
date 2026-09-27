@@ -233,7 +233,12 @@ function openSlipModal(order) {
     currentActiveOrder = order;
     const modal = document.getElementById('slip-modal');
     document.getElementById('slip-modal-title').textContent = `ตรวจสอบหลักฐานคำสั่งซื้อ: ${order.order_number}`;
-    document.getElementById('slip-modal-img').src = order.slip_image_url || '/assets/slips/slip_mock_01.png';
+    const imgEl = document.getElementById('slip-modal-img');
+    imgEl.src = order.slip_image_url || '/assets/slips/slip_mock_01.png';
+    imgEl.onerror = () => {
+        imgEl.onerror = null;
+        imgEl.src = '/assets/slips/slip_mock_01.svg';
+    };
 
     const details = document.getElementById('slip-order-details');
     details.innerHTML = `

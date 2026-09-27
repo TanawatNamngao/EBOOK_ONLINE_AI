@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <rect width="240" height="240" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <!-- Top PromptPay Bar -->
+  <path d="M 0 16 Q 0 0 16 0 L 224 0 Q 240 0 240 16 L 240 45 L 0 45 Z" fill="#003d6b" />
+  <text x="120" y="28" fill="#ffffff" font-family="'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="14" text-anchor="middle" letter-spacing="1">Thai QR Payment</text>
+  
+  <!-- Outer Finder Patterns -->
+  <rect x="25" y="60" width="48" height="48" fill="#000000" rx="4"/>
+  <rect x="33" y="68" width="32" height="32" fill="#ffffff" rx="2"/>
+  <rect x="41" y="76" width="16" height="16" fill="#000000" rx="1"/>
+
+  <rect x="167" y="60" width="48" height="48" fill="#000000" rx="4"/>
+  <rect x="175" y="68" width="32" height="32" fill="#ffffff" rx="2"/>
+  <rect x="183" y="76" width="16" height="16" fill="#000000" rx="1"/>
+
+  <rect x="25" y="167" width="48" height="48" fill="#000000" rx="4"/>
+  <rect x="33" y="175" width="32" height="32" fill="#ffffff" rx="2"/>
+  <rect x="41" y="183" width="16" height="16" fill="#000000" rx="1"/>
+
+  <!-- QR Matrix Code Grid -->
+  <g fill="#0f172a">
+    <rect x="85" y="65" width="8" height="8"/>
+    <rect x="100" y="65" width="8" height="8"/>
+    <rect x="115" y="65" width="8" height="8"/>
+    <rect x="130" y="65" width="8" height="8"/>
+    <rect x="145" y="65" width="8" height="8"/>
+    <rect x="85" y="80" width="8" height="8"/>
+    <rect x="115" y="80" width="8" height="8"/>
+    <rect x="145" y="80" width="8" height="8"/>
+    <rect x="85" y="95" width="8" height="8"/>
+    <rect x="100" y="95" width="8" height="8"/>
+    <rect x="130" y="95" width="8" height="8"/>
+    <rect x="145" y="95" width="8" height="8"/>
+
+    <rect x="25" y="125" width="8" height="8"/>
+    <rect x="40" y="125" width="8" height="8"/>
+    <rect x="55" y="125" width="8" height="8"/>
+    <rect x="70" y="125" width="8" height="8"/>
+    <rect x="85" y="125" width="8" height="8"/>
+    <rect x="100" y="125" width="8" height="8"/>
+    <rect x="115" y="125" width="8" height="8"/>
+    <rect x="130" y="125" width="8" height="8"/>
+    <rect x="145" y="125" width="8" height="8"/>
+    <rect x="160" y="125" width="8" height="8"/>
+    <rect x="175" y="125" width="8" height="8"/>
+    <rect x="190" y="125" width="8" height="8"/>
+    <rect x="205" y="125" width="8" height="8"/>
+
+    <rect x="85" y="140" width="8" height="8"/>
+    <rect x="115" y="140" width="8" height="8"/>
+    <rect x="145" y="140" width="8" height="8"/>
+    <rect x="175" y="140" width="8" height="8"/>
+    <rect x="205" y="140" width="8" height="8"/>
+
+    <rect x="85" y="155" width="8" height="8"/>
+    <rect x="100" y="155" width="8" height="8"/>
+    <rect x="130" y="155" width="8" height="8"/>
+    <rect x="160" y="155" width="8" height="8"/>
+    <rect x="190" y="155" width="8" height="8"/>
+
+    <rect x="85" y="170" width="8" height="8"/>
+    <rect x="115" y="170" width="8" height="8"/>
+    <rect x="145" y="170" width="8" height="8"/>
+    <rect x="160" y="170" width="8" height="8"/>
+    <rect x="175" y="170" width="8" height="8"/>
+    <rect x="205" y="170" width="8" height="8"/>
+
+    <rect x="85" y="185" width="8" height="8"/>
+    <rect x="100" y="185" width="8" height="8"/>
+    <rect x="130" y="185" width="8" height="8"/>
+    <rect x="145" y="185" width="8" height="8"/>
+    <rect x="175" y="185" width="8" height="8"/>
+    <rect x="190" y="185" width="8" height="8"/>
+
+    <rect x="85" y="200" width="8" height="8"/>
+    <rect x="115" y="200" width="8" height="8"/>
+    <rect x="130" y="200" width="8" height="8"/>
+    <rect x="160" y="200" width="8" height="8"/>
+    <rect x="205" y="200" width="8" height="8"/>
+  </g>
+
+  <!-- Center PromptPay Bird Logo Emblem -->
+  <circle cx="120" cy="110" r="16" fill="#003d6b"/>
+  <circle cx="120" cy="110" r="14" fill="#ffffff"/>
+  <path d="M 112 110 L 120 102 L 128 110 L 120 118 Z" fill="#003d6b"/>
+</svg>

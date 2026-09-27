@@ -469,4 +469,229 @@ bookConfigs.forEach(b => {
 // Default Cover
 fs.copyFileSync(path.join(coversDir, 'book1.svg'), path.join(coversDir, 'default.svg'));
 
-console.log('✅ Generated 12 high-detail, illustrated SVG book covers with 100% valid XML entities!');
+// Generate PromptPay QR Code
+const promptPayQrSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <rect width="240" height="240" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <!-- Top PromptPay Bar -->
+  <path d="M 0 16 Q 0 0 16 0 L 224 0 Q 240 0 240 16 L 240 45 L 0 45 Z" fill="#003d6b" />
+  <text x="120" y="28" fill="#ffffff" font-family="'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="14" text-anchor="middle" letter-spacing="1">Thai QR Payment</text>
+  
+  <!-- Outer Finder Patterns -->
+  <rect x="25" y="60" width="48" height="48" fill="#000000" rx="4"/>
+  <rect x="33" y="68" width="32" height="32" fill="#ffffff" rx="2"/>
+  <rect x="41" y="76" width="16" height="16" fill="#000000" rx="1"/>
+
+  <rect x="167" y="60" width="48" height="48" fill="#000000" rx="4"/>
+  <rect x="175" y="68" width="32" height="32" fill="#ffffff" rx="2"/>
+  <rect x="183" y="76" width="16" height="16" fill="#000000" rx="1"/>
+
+  <rect x="25" y="167" width="48" height="48" fill="#000000" rx="4"/>
+  <rect x="33" y="175" width="32" height="32" fill="#ffffff" rx="2"/>
+  <rect x="41" y="183" width="16" height="16" fill="#000000" rx="1"/>
+
+  <!-- QR Matrix Code Grid -->
+  <g fill="#0f172a">
+    <rect x="85" y="65" width="8" height="8"/>
+    <rect x="100" y="65" width="8" height="8"/>
+    <rect x="115" y="65" width="8" height="8"/>
+    <rect x="130" y="65" width="8" height="8"/>
+    <rect x="145" y="65" width="8" height="8"/>
+    <rect x="85" y="80" width="8" height="8"/>
+    <rect x="115" y="80" width="8" height="8"/>
+    <rect x="145" y="80" width="8" height="8"/>
+    <rect x="85" y="95" width="8" height="8"/>
+    <rect x="100" y="95" width="8" height="8"/>
+    <rect x="130" y="95" width="8" height="8"/>
+    <rect x="145" y="95" width="8" height="8"/>
+
+    <rect x="25" y="125" width="8" height="8"/>
+    <rect x="40" y="125" width="8" height="8"/>
+    <rect x="55" y="125" width="8" height="8"/>
+    <rect x="70" y="125" width="8" height="8"/>
+    <rect x="85" y="125" width="8" height="8"/>
+    <rect x="100" y="125" width="8" height="8"/>
+    <rect x="115" y="125" width="8" height="8"/>
+    <rect x="130" y="125" width="8" height="8"/>
+    <rect x="145" y="125" width="8" height="8"/>
+    <rect x="160" y="125" width="8" height="8"/>
+    <rect x="175" y="125" width="8" height="8"/>
+    <rect x="190" y="125" width="8" height="8"/>
+    <rect x="205" y="125" width="8" height="8"/>
+
+    <rect x="85" y="140" width="8" height="8"/>
+    <rect x="115" y="140" width="8" height="8"/>
+    <rect x="145" y="140" width="8" height="8"/>
+    <rect x="175" y="140" width="8" height="8"/>
+    <rect x="205" y="140" width="8" height="8"/>
+
+    <rect x="85" y="155" width="8" height="8"/>
+    <rect x="100" y="155" width="8" height="8"/>
+    <rect x="130" y="155" width="8" height="8"/>
+    <rect x="160" y="155" width="8" height="8"/>
+    <rect x="190" y="155" width="8" height="8"/>
+
+    <rect x="85" y="170" width="8" height="8"/>
+    <rect x="115" y="170" width="8" height="8"/>
+    <rect x="145" y="170" width="8" height="8"/>
+    <rect x="160" y="170" width="8" height="8"/>
+    <rect x="175" y="170" width="8" height="8"/>
+    <rect x="205" y="170" width="8" height="8"/>
+
+    <rect x="85" y="185" width="8" height="8"/>
+    <rect x="100" y="185" width="8" height="8"/>
+    <rect x="130" y="185" width="8" height="8"/>
+    <rect x="145" y="185" width="8" height="8"/>
+    <rect x="175" y="185" width="8" height="8"/>
+    <rect x="190" y="185" width="8" height="8"/>
+
+    <rect x="85" y="200" width="8" height="8"/>
+    <rect x="115" y="200" width="8" height="8"/>
+    <rect x="130" y="200" width="8" height="8"/>
+    <rect x="160" y="200" width="8" height="8"/>
+    <rect x="205" y="200" width="8" height="8"/>
+  </g>
+
+  <!-- Center PromptPay Bird Logo Emblem -->
+  <circle cx="120" cy="110" r="16" fill="#003d6b"/>
+  <circle cx="120" cy="110" r="14" fill="#ffffff"/>
+  <path d="M 112 110 L 120 102 L 128 110 L 120 118 Z" fill="#003d6b"/>
+</svg>`;
+fs.writeFileSync(path.join(__dirname, '..', 'public', 'assets', 'promptpay_qr.svg'), promptPayQrSvg, 'utf8');
+
+// ====================================================================
+// Generate 32 Realistic Thai Mobile Banking Payment Slips
+// ====================================================================
+const customers = [
+    'นายธนวัฒน์ นามเหง้า',
+    'นายภานุวัฒน์ แสงเครือ',
+    'สมชาย ดำรงไทย',
+    'สุดา เกียรติสกุล',
+    'วิชัย บุญมา',
+    'กัญญา วารินทร์',
+    'อานนท์ มั่นคง',
+    'พิมพา ชูใจ',
+    'ชวลิต ธนกิจ',
+    'ณัฐพร สุขเกษม',
+    'ธีรภัทร พงษ์ศิริ'
+];
+
+const bankThemes = [
+    { name: 'KBANK', c1: '#00a950', c2: '#007b3a', title: 'K PLUS' },
+    { name: 'SCB', c1: '#4e2a84', c2: '#371866', title: 'SCB EASY' },
+    { name: 'PROMPTPAY', c1: '#003d6b', c2: '#002540', title: 'PromptPay' },
+    { name: 'KTB', c1: '#00a3e0', c2: '#0077aa', title: 'Krungthai NEXT' },
+    { name: 'BBL', c1: '#1e3a8a', c2: '#0f172a', title: 'Bangkok Bank' }
+];
+
+const slipAmounts = [
+    350, 540, 420, 250, 470, 380, 290, 560, 220, 640,
+    195, 640, 280, 730, 510, 420, 380, 270, 470, 350,
+    540, 260, 350, 420, 500, 460, 290, 280, 350, 510, 420, 290
+];
+
+for (let i = 1; i <= 32; i++) {
+    const num = i < 10 ? `0${i}` : `${i}`;
+    const cust = customers[(i - 1) % customers.length];
+    const theme = bankThemes[(i - 1) % bankThemes.length];
+    const amount = slipAmounts[i - 1] || 350;
+    const day = (i % 28) + 1;
+    const dayStr = day < 10 ? `0${day}` : `${day}`;
+    const month = i <= 6 ? '06' : (i <= 15 ? '07' : (i <= 25 ? '08' : '09'));
+    const timeStr = `2569-${month}-${dayStr} ${(10 + (i % 8))}:${((i * 7) % 59)}:${((i * 13) % 59)}`;
+    const refCode = `2026${month}${dayStr}00${num}99`;
+
+    const slipSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 620" width="420" height="620">
+  <defs>
+    <linearGradient id="slip_head_${num}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${theme.c1}" />
+      <stop offset="100%" stop-color="${theme.c2}" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Card -->
+  <rect x="8" y="8" width="404" height="604" rx="20" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+  <!-- Top Header Banner -->
+  <path d="M 8 28 Q 8 8 28 8 L 392 8 Q 412 8 412 28 L 412 120 L 8 120 Z" fill="url(#slip_head_${num})" />
+
+  <!-- Success Checkmark Circle -->
+  <circle cx="210" cy="52" r="22" fill="#ffffff" />
+  <path d="M 199 52 L 207 60 L 221 44" fill="none" stroke="${theme.c1}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Header Title -->
+  <text x="210" y="92" fill="#ffffff" font-family="'Segoe UI', 'Sarabun', sans-serif" font-weight="bold" font-size="16" text-anchor="middle">โอนเงินสำเร็จ (${theme.title})</text>
+  <text x="210" y="110" fill="rgba(255,255,255,0.9)" font-family="'Segoe UI', Roboto, sans-serif" font-size="11" text-anchor="middle">${timeStr}</text>
+
+  <!-- Body Content -->
+  <g transform="translate(35, 145)">
+    <!-- Transaction ID -->
+    <text x="0" y="0" fill="#64748b" font-family="'Segoe UI', sans-serif" font-size="12">รหัสอ้างอิงธุรกรรม</text>
+    <text x="350" y="0" fill="#0f172a" font-family="'Consolas', monospace" font-weight="bold" font-size="12" text-anchor="end">${refCode}</text>
+    <line x1="0" y1="14" x2="350" y2="14" stroke="#f1f5f9" stroke-width="1.5" />
+
+    <!-- Sender Details -->
+    <circle cx="14" cy="38" r="14" fill="#f1f5f9"/>
+    <text x="14" y="43" fill="#64748b" font-family="sans-serif" font-size="14" text-anchor="middle">👤</text>
+    <text x="38" y="34" fill="#64748b" font-family="'Segoe UI', sans-serif" font-size="11">จาก (ผู้สั่งซื้อ e-Book)</text>
+    <text x="38" y="50" fill="#0f172a" font-family="'Segoe UI', 'Sarabun', sans-serif" font-weight="bold" font-size="13">${cust}</text>
+    <text x="350" y="50" fill="#64748b" font-family="sans-serif" font-size="11" text-anchor="end">พร้อมเพย์ xxx-xxx-2222</text>
+
+    <!-- Arrow down connection -->
+    <line x1="14" y1="58" x2="14" y2="72" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="2 3"/>
+    <polygon points="14,76 10,70 18,70" fill="#94a3b8"/>
+
+    <!-- Receiver Details -->
+    <circle cx="14" cy="98" r="14" fill="#e0f2fe"/>
+    <text x="14" y="103" fill="#0284c7" font-family="sans-serif" font-size="14" text-anchor="middle">📚</text>
+    <text x="38" y="94" fill="#64748b" font-family="'Segoe UI', sans-serif" font-size="11">ไปยัง (ร้านค้าจำหน่าย)</text>
+    <text x="38" y="110" fill="#0f172a" font-family="'Segoe UI', 'Sarabun', sans-serif" font-weight="bold" font-size="13">ร้านค้า EBOOK_ONLINE (Official)</text>
+    <text x="350" y="110" fill="#0284c7" font-family="sans-serif" font-weight="bold" font-size="11" text-anchor="end">พร้อมเพย์ 081-999-8888</text>
+
+    <line x1="0" y1="128" x2="350" y2="128" stroke="#f1f5f9" stroke-width="1.5" />
+
+    <!-- Amount Highlight Box -->
+    <rect x="0" y="145" width="350" height="74" rx="12" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+    <text x="175" y="172" fill="#166534" font-family="'Segoe UI', 'Sarabun', sans-serif" font-size="12" text-anchor="middle">จำนวนเงินที่ชำระ (บาท)</text>
+    <text x="175" y="202" fill="#15803d" font-family="'Segoe UI', sans-serif" font-weight="900" font-size="26" text-anchor="middle">฿${amount.toFixed(2)}</text>
+
+    <!-- Fee & Notes -->
+    <text x="0" y="244" fill="#64748b" font-family="'Segoe UI', sans-serif" font-size="12">ค่าธรรมเนียม</text>
+    <text x="350" y="244" fill="#059669" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="12" text-anchor="end">0.00 บาท</text>
+
+    <text x="0" y="268" fill="#64748b" font-family="'Segoe UI', sans-serif" font-size="12">บันทึกช่วยจำ</text>
+    <text x="350" y="268" fill="#0f172a" font-family="'Segoe UI', 'Sarabun', sans-serif" font-size="12" text-anchor="end">ชำระคำสั่งซื้อ E-Book #ORD-2026-00${num}</text>
+  </g>
+
+  <!-- Bottom Verification QR code box -->
+  <g transform="translate(35, 470)">
+    <rect x="0" y="0" width="350" height="74" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+    <!-- Mini QR Pattern -->
+    <rect x="14" y="12" width="50" height="50" fill="#ffffff" stroke="#cbd5e1"/>
+    <rect x="19" y="17" width="16" height="16" fill="#0f172a"/>
+    <rect x="23" y="21" width="8" height="8" fill="#ffffff"/>
+    <rect x="43" y="17" width="16" height="16" fill="#0f172a"/>
+    <rect x="47" y="21" width="8" height="8" fill="#ffffff"/>
+    <rect x="19" y="41" width="16" height="16" fill="#0f172a"/>
+    <rect x="23" y="45" width="8" height="8" fill="#ffffff"/>
+    <rect x="41" y="41" width="6" height="6" fill="#0f172a"/>
+    <rect x="51" y="41" width="6" height="6" fill="#0f172a"/>
+    <rect x="47" y="51" width="8" height="8" fill="#0f172a"/>
+
+    <text x="76" y="32" fill="#0f172a" font-family="'Segoe UI', 'Sarabun', sans-serif" font-weight="bold" font-size="12">สแกนตรวจสอบสลิป</text>
+    <text x="76" y="50" fill="#64748b" font-family="'Segoe UI', sans-serif" font-size="10">E-Slip Verification Standard</text>
+    <text x="335" y="42" fill="#10b981" font-family="sans-serif" font-weight="bold" font-size="11" text-anchor="end">✓ VERIFIED</text>
+  </g>
+
+  <!-- Footer Watermark -->
+  <text x="210" y="582" fill="#94a3b8" font-family="'Segoe UI', 'Sarabun', sans-serif" font-size="10" text-anchor="middle">หลักฐานสลิปจำลองสำหรับโครงงาน Mini Project วิชา Database 2026</text>
+</svg>`;
+
+    // Save as both .png and .svg so any reference in database/code loads flawlessly
+    fs.writeFileSync(path.join(slipsDir, `slip_mock_${num}.png`), slipSvg, 'utf8');
+    fs.writeFileSync(path.join(slipsDir, `slip_mock_${num}.svg`), slipSvg, 'utf8');
+}
+
+console.log('✅ Generated 12 covers, PromptPay QR, and 32 realistic Thai Mobile Banking Slips (.png and .svg)!');
+
