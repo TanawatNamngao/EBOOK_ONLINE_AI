@@ -57,6 +57,7 @@ function switchAdminTab(tabName) {
     if (tabName === 'reports') loadAllReports();
     if (tabName === 'orders') loadAdminOrders();
     if (tabName === 'dashboard') loadDashboardStats();
+    if (tabName === 'users') loadAdminUsers();
 }
 
 // Switch Report Sub-tabs
@@ -780,3 +781,55 @@ function exportReportToCSV(reportNum, filename) {
 
     downloadCSV(csv, `report_${reportNum}_${filename}`);
 }
+
+// ====================================================================
+// Users & Roles Management View
+// ====================================================================
+async function loadAdminUsers() {
+    const tbody = document.getElementById('admin-users-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">🔄 กำลังโหลดข้อมูลสมาชิก...</td></tr>';
+
+    try {
+        const res = await apiFetch('/api/admin/users');
+        const users = await res.json();
+
+        if (!users || users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบข้อมูลสมาชิกในระบบ</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        users.forEach(u => {
+            const tr = document.createElement('tr');
+            const isAdm = u.role_id === 2 || u.role_name === 'admin';
+            const roleBadge = isAdm
+                ? '<span style="background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4); padding:3px 8px; border-radius:4px; font-weight:bold; font-size:0.78rem;">🛡️ ผู้ดูแลระบบ (Admin)</span>'
+                : '<span style="background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.4); padding:3px 8px; border-radius:4px; font-weight:bold; font-size:0.78rem;">👤 ลูกค้า (Customer)</span>';
+
+            const createdDate = u.created_at ? u.created_at.substring(0, 16) : '-';
+
+            tr.innerHTML = `
+                <td style="font-weight:bold; color:var(--text-muted);">${u.user_id}</td>
+                <td>
+                    <div style="font-weight:bold; color:var(--text-primary);">${u.full_name}</div>
+                    <div style="font-size:0.78rem; color:var(--text-muted);">${u.phone ? '📞 ' + u.phone : 'ไม่มีเบอร์โทร'}</div>
+                </td>
+                <td><code>${u.username}</code></td>
+                <td><a href="mailto:${u.email}" style="color:#38bdf8;">${u.email}</a></td>
+                <td>
+                    <strong>${u.total_orders || 0} คำสั่งซื้อ</strong>
+                    <div style="font-size:0.78rem; color:#10b981;">รวม ฿${parseFloat(u.total_spent || 0).toFixed(2)}</div>
+                </td>
+                <td>${roleBadge}</td>
+                <td>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">${createdDate}</span>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); text-align:center; padding:20px;">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${err.message}</td></tr>`;
+    }
+}
+

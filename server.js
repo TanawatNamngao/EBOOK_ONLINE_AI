@@ -229,6 +229,25 @@ app.get('/api/auth/test-accounts', (req, res) => {
     }
 });
 
+// Admin: Get all registered users with order stats
+app.get('/api/admin/users', (req, res) => {
+    try {
+        const users = db.prepare(`
+            SELECT u.user_id, u.role_id, r.role_name, u.username, u.email, u.full_name, u.phone, u.created_at,
+                   COUNT(DISTINCT o.order_id) as total_orders,
+                   COALESCE(SUM(CASE WHEN o.status = 'confirmed' THEN o.total_amount ELSE 0 END), 0) as total_spent
+            FROM users u
+            JOIN roles r ON u.role_id = r.role_id
+            LEFT JOIN orders o ON u.user_id = o.user_id
+            GROUP BY u.user_id
+            ORDER BY u.user_id DESC
+        `).all();
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Current User info
 app.get('/api/auth/me', (req, res) => {
     const user = getCurrentUser(req);
@@ -912,19 +931,8 @@ app.get('/api/admin/authors', (req, res) => {
     const authors = db.prepare('SELECT * FROM authors ORDER BY name ASC').all();
     res.json(authors);
 });
+// Note: /api/admin/users is defined above with order & spent statistics
 
-app.get('/api/admin/users', (req, res) => {
-    const users = db.prepare(`
-        SELECT u.user_id, u.username, u.email, u.full_name, u.phone, u.role_id, r.role_name, u.created_at,
-               COUNT(o.order_id) AS total_orders
-        FROM users u
-        JOIN roles r ON u.role_id = r.role_id
-        LEFT JOIN orders o ON u.user_id = o.user_id
-        GROUP BY u.user_id
-        ORDER BY u.user_id ASC
-    `).all();
-    res.json(users);
-});
 
 // Update User Role
 app.put('/api/admin/users/:id/role', (req, res) => {
