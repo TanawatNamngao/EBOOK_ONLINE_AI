@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 580" width="400" height="580">
+  <defs>
+    <linearGradient id="grad_book9" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#312e81" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="400" height="580" rx="16" fill="url(#grad_book9)" />
+  <rect width="400" height="580" fill="url(#grid)" />
+  <rect x="0" y="0" width="28" height="580" fill="rgba(0,0,0,0.25)" />
+  <line x1="28" y1="0" x2="28" y2="580" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+  
+  <rect x="46" y="44" width="76" height="26" rx="6" fill="rgba(255,255,255,0.22)" />
+  <text x="84" y="62" fill="#ffffff" font-family="'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="12" text-anchor="middle">NOVEL</text>
+  <circle cx="340" cy="58" r="18" fill="rgba(255,255,255,0.18)" />
+  <text x="340" y="64" fill="#fbbf24" font-family="'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="15" text-anchor="middle">★</text>
+  
+  <g transform="translate(48, 230)">
+    <text x="0" y="0" fill="#ffffff" font-family="'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="24">Shadow of the Knight</text>
+    <text x="0" y="36" fill="rgba(255,255,255,0.85)" font-family="'Segoe UI', Roboto, sans-serif" font-size="15">Epic Fantasy Saga</text>
+    <line x1="0" y1="62" x2="100" y2="62" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <rect x="46" y="480" width="308" height="46" rx="10" fill="rgba(0,0,0,0.35)" />
+  <text x="64" y="509" fill="rgba(255,255,255,0.85)" font-family="'Segoe UI', Roboto, sans-serif" font-size="13">DIGITAL E-BOOK EDITION</text>
+  <text x="334" y="509" fill="#fbbf24" font-family="'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="14" text-anchor="end">2026</text>
+</svg>

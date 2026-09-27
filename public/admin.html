@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบริหารจัดการร้านและรายงานวิเคราะห์ - EBOOK_ONLINE</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body style="background: #090d16;">
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <span style="font-size: 1.5rem;">🛡️</span>
+                <span>ADMIN<span class="brand-highlight">_PORTAL</span></span>
+            </div>
+
+            <nav class="admin-nav">
+                <div class="admin-nav-item active" onclick="switchAdminTab('dashboard')" id="nav-tab-dashboard">
+                    <span>📊</span> แผงควบคุม (Dashboard)
+                </div>
+                <div class="admin-nav-item" onclick="switchAdminTab('orders')" id="nav-tab-orders">
+                    <span>📑</span> จัดการคำสั่งซื้อ
+                    <span id="badge-pending-count" class="badge-count" style="position:static; margin-left:auto; display:none;">0</span>
+                </div>
+                <div class="admin-nav-item" onclick="switchAdminTab('ebooks')" id="nav-tab-ebooks">
+                    <span>📚</span> จัดการรายการ E-Book
+                </div>
+                <div class="admin-nav-item" onclick="switchAdminTab('reports')" id="nav-tab-reports">
+                    <span>📈</span> รายงานวิเคราะห์ 4 หัวข้อ
+                </div>
+                <div class="admin-nav-item" onclick="switchAdminTab('users')" id="nav-tab-users">
+                    <span>👥</span> จัดการผู้ใช้ & สิทธิ์
+                </div>
+            </nav>
+
+            <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border);">
+                <a href="/" class="btn btn-secondary btn-sm" style="width:100%; justify-content:center;">
+                    🌐 กลับสู่หน้าร้าน
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="admin-main">
+            <!-- Header -->
+            <div class="admin-header">
+                <div>
+                    <h1 style="font-size: 1.8rem;" id="admin-view-title">แผงควบคุมหลัก (Dashboard)</h1>
+                    <p style="color:var(--text-secondary); font-size:0.9rem;">ระบบบริหารจัดการร้านและวิเคราะห์แนวโน้มข้อมูลจริงจาก Database</p>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="text-align:right;">
+                        <div style="font-weight:bold; font-size:0.95rem;">ผู้ดูแลระบบ (Admin)</div>
+                        <div style="font-size:0.75rem; color:#10b981;">● ออนไลน์ในระบบ</div>
+                    </div>
+                    <div class="user-avatar" style="background:#0284c7;">A</div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 1. DASHBOARD VIEW -->
+            <!-- ========================================================= -->
+            <div id="view-dashboard">
+                <!-- Stat Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(16,185,129,0.15); color:#10b981;">💰</div>
+                        <div>
+                            <div class="stat-val" id="stat-total-sales">฿0.00</div>
+                            <div class="stat-label">ยอดขายสำเร็จทั้งหมด</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(56,189,248,0.15); color:#38bdf8;">📦</div>
+                        <div>
+                            <div class="stat-val" id="stat-total-orders">0</div>
+                            <div class="stat-label">คำสั่งซื้อในระบบทั้งหมด</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(245,158,11,0.15); color:#f59e0b;">⏳</div>
+                        <div>
+                            <div class="stat-val" id="stat-pending-orders" style="color:#f59e0b;">0</div>
+                            <div class="stat-label">รอตรวจสอบสลิปจำลอง</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(129,140,248,0.15); color:#818cf8;">📖</div>
+                        <div>
+                            <div class="stat-val" id="stat-total-books">0</div>
+                            <div class="stat-label">E-Book พร้อมขาย</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(244,63,94,0.15); color:#f43f5e;">👤</div>
+                        <div>
+                            <div class="stat-val" id="stat-total-users">0</div>
+                            <div class="stat-label">ลูกค้าลงทะเบียน</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Orders Alert Box -->
+                <div class="data-table-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h3 style="font-size:1.2rem;">⚡ คำสั่งซื้อล่าสุดที่ต้องดำเนินการตรวจสอบ</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="switchAdminTab('orders')">ดูคำสั่งซื้อทั้งหมด ➔</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="admin-table" id="dashboard-recent-orders-table">
+                            <thead>
+                                <tr>
+                                    <th>เลขที่คำสั่งซื้อ</th>
+                                    <th>ลูกค้า</th>
+                                    <th>ยอดรวม</th>
+                                    <th>ช่องทาง</th>
+                                    <th>สถานะ</th>
+                                    <th>การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 2. ORDERS MANAGEMENT VIEW -->
+            <!-- ========================================================= -->
+            <div id="view-orders" style="display:none;">
+                <div class="data-table-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn btn-sm btn-primary order-filter-btn active" onclick="filterAdminOrders('all', this)">ทั้งหมด</button>
+                            <button class="btn btn-sm btn-secondary order-filter-btn" onclick="filterAdminOrders('pending', this)">รอตรวจสอบสลิป</button>
+                            <button class="btn btn-sm btn-secondary order-filter-btn" onclick="filterAdminOrders('confirmed', this)">ยืนยันแล้ว</button>
+                            <button class="btn btn-sm btn-secondary order-filter-btn" onclick="filterAdminOrders('cancelled', this)">ยกเลิก</button>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="admin-order-search" placeholder="ค้นหาเลขออเดอร์, ชื่อลูกค้า..." class="search-input" style="padding:6px 14px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:0.85rem;" oninput="searchAdminOrders(this.value)">
+                            <button class="btn btn-secondary btn-sm" onclick="exportOrdersToCSV()">📥 Export CSV</button>
+                            <button class="btn btn-secondary btn-sm" onclick="loadAdminOrders()">🔄 รีเฟรช</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>เลขคำสั่งซื้อ</th>
+                                    <th>ลูกค้า</th>
+                                    <th>รายการหนังสือ</th>
+                                    <th>ยอดเงิน</th>
+                                    <th>หลักฐานชำระเงิน</th>
+                                    <th>สถานะ</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-orders-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 3. E-BOOKS & CATEGORIES MANAGEMENT VIEW -->
+            <!-- ========================================================= -->
+            <div id="view-ebooks" style="display:none;">
+                <!-- E-Books Card -->
+                <div class="data-table-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h3>คลังหนังสือ E-Book ทั้งหมด</h3>
+                            <p style="color:var(--text-secondary); font-size:0.85rem;">จัดการรายการ ปรับราคา แก้ไขข้อมูล และกำหนดลิงก์ดาวน์โหลด</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="openAddEbookModal()">+ เพิ่ม E-Book เล่มใหม่</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>รูปปก</th>
+                                    <th>ชื่อหนังสือ</th>
+                                    <th>หมวดหมู่</th>
+                                    <th>ผู้แต่ง</th>
+                                    <th>ราคา</th>
+                                    <th>สถานะการขาย</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-ebooks-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Categories Card (ตรงตามข้อ 3: จัดการหมวดหมู่) -->
+                <div class="data-table-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h3>จัดการหมวดหมู่หนังสือ (Categories)</h3>
+                            <p style="color:var(--text-secondary); font-size:0.85rem;">เพิ่ม แก้ไข และกำหนดหมวดหมู่ให้ E-Book ในระบบ</p>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="openAddCategoryModal()">+ เพิ่มหมวดหมู่ใหม่</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>รหัส ID</th>
+                                    <th>ชื่อหมวดหมู่</th>
+                                    <th>Slug</th>
+                                    <th>คำอธิบาย</th>
+                                    <th>จำนวนเล่มในหมวด</th>
+                                    <th>สถานะ</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-categories-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 4. ANALYTICS & 4 REPORTS VIEW (ไฮไลท์วิชา Database!) -->
+            <!-- ========================================================= -->
+            <div id="view-reports" style="display:none;">
+                
+                <!-- Report Tabs -->
+                <div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;">
+                    <button class="btn btn-primary btn-sm report-nav-btn active" onclick="switchReportTab(1, this)">
+                        1. ยอดขายตามช่วงเวลา (วัน/เดือน)
+                    </button>
+                    <button class="btn btn-secondary btn-sm report-nav-btn" onclick="switchReportTab(2, this)">
+                        2. E-Book ขายดีที่สุด
+                    </button>
+                    <button class="btn btn-secondary btn-sm report-nav-btn" onclick="switchReportTab(3, this)">
+                        3. ยอดขายตามหมวดหมู่
+                    </button>
+                    <button class="btn btn-secondary btn-sm report-nav-btn" onclick="switchReportTab(4, this)">
+                        4. พฤติกรรมลูกค้า & สถานะคำสั่งซื้อ
+                    </button>
+                </div>
+
+                <!-- Report Container 1 -->
+                <div id="report-tab-1" class="report-content-panel">
+                    <div class="data-table-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <h2 style="font-size:1.35rem;">รายงานที่ 1: ยอดขายตามช่วงเวลา (Sales Over Time)</h2>
+                                <p style="color:var(--text-secondary); font-size:0.88rem; margin-top:4px;">
+                                    <strong>คำถามที่ตอบ:</strong> ยอดขาย จำนวนคำสั่งซื้อ และค่าเฉลี่ยต่อคำสั่งซื้อเปลี่ยนไปอย่างไรตามวันที่หรือเดือน?
+                                </p>
+                                <div style="font-size:0.8rem; color:#a5b4fc; margin-top:4px;">
+                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายภานุวัฒน์ แสงเครือ (67332110248-5)
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(1, 'sales_over_time')">📥 Export CSV</button>
+                                <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ พิมพ์รายงาน</button>
+                            </div>
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="table-responsive">
+                            <table class="admin-table" id="report1-table">
+                                <thead>
+                                    <tr>
+                                        <th>ช่วงเวลา (เดือน)</th>
+                                        <th>จำนวนคำสั่งซื้อ</th>
+                                        <th>ยอดขายรวม (บาท)</th>
+                                        <th>ค่าเฉลี่ยต่อออเดอร์</th>
+                                        <th>ยอดต่ำสุด</th>
+                                        <th>ยอดสูงสุด</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Academic SQL Accordion -->
+                        <details class="sql-accordion">
+                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, SUM, COUNT, AVG, Date filter)</summary>
+                            <pre class="sql-code-block">
+SELECT 
+    strftime('%Y-%m', o.created_at) AS sale_period,
+    COUNT(o.order_id) AS total_orders,
+    SUM(o.total_amount) AS gross_sales,
+    ROUND(AVG(o.total_amount), 2) AS average_order_value,
+    MIN(o.total_amount) AS min_order_amount,
+    MAX(o.total_amount) AS max_order_amount
+FROM orders o
+JOIN payments p ON o.order_id = p.order_id
+WHERE o.status = 'confirmed' 
+  AND p.payment_status = 'verified'
+GROUP BY strftime('%Y-%m', o.created_at)
+ORDER BY sale_period ASC;
+                            </pre>
+                        </details>
+                    </div>
+                </div>
+
+                <!-- Report Container 2 -->
+                <div id="report-tab-2" class="report-content-panel" style="display:none;">
+                    <div class="data-table-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <h2 style="font-size:1.35rem;">รายงานที่ 2: E-Book ขายดีที่สุด (Best-Selling E-Books)</h2>
+                                <p style="color:var(--text-secondary); font-size:0.88rem; margin-top:4px;">
+                                    <strong>คำถามที่ตอบ:</strong> E-Book ใดขายได้มากที่สุดตามจำนวนเล่มหรือยอดขายรวม?
+                                </p>
+                                <div style="font-size:0.8rem; color:#a5b4fc; margin-top:4px;">
+                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายธนวัฒน์ นามเหง้า (67332110293-4)
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(2, 'best_selling_ebooks')">📥 Export CSV</button>
+                                <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ พิมพ์รายงาน</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="admin-table" id="report2-table">
+                                <thead>
+                                    <tr>
+                                        <th>อันดับ</th>
+                                        <th>ชื่อเรื่อง E-Book</th>
+                                        <th>ผู้แต่ง</th>
+                                        <th>หมวดหมู่</th>
+                                        <th>ราคาปัจจุบัน</th>
+                                        <th>จำนวนเล่มที่ขายได้</th>
+                                        <th>ยอดขายรวม (บาท)</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <details class="sql-accordion">
+                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, SUM, COUNT, LIMIT)</summary>
+                            <pre class="sql-code-block">
+SELECT 
+    b.ebook_id,
+    b.title AS ebook_title,
+    a.name AS author_name,
+    c.name AS category_name,
+    b.price AS current_price,
+    COUNT(oi.order_item_id) AS total_copies_sold,
+    SUM(oi.price_at_purchase) AS total_revenue
+FROM ebooks b
+JOIN authors a ON b.author_id = a.author_id
+JOIN categories c ON b.category_id = c.category_id
+JOIN order_items oi ON b.ebook_id = oi.ebook_id
+JOIN orders o ON oi.order_id = o.order_id
+WHERE o.status = 'confirmed'
+GROUP BY b.ebook_id, b.title, a.name, c.name, b.price
+ORDER BY total_copies_sold DESC, total_revenue DESC
+LIMIT 10;
+                            </pre>
+                        </details>
+                    </div>
+                </div>
+
+                <!-- Report Container 3 -->
+                <div id="report-tab-3" class="report-content-panel" style="display:none;">
+                    <div class="data-table-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <h2 style="font-size:1.35rem;">รายงานที่ 3: ยอดขายตามหมวดหมู่ (Sales by Category)</h2>
+                                <p style="color:var(--text-secondary); font-size:0.88rem; margin-top:4px;">
+                                    <strong>คำถามที่ตอบ:</strong> หมวดหมู่ใดสร้างยอดขายและจำนวนรายการขายสูงสุด?
+                                </p>
+                                <div style="font-size:0.8rem; color:#a5b4fc; margin-top:4px;">
+                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายธนวัฒน์ นามเหง้า (67332110293-4)
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(3, 'sales_by_category')">📥 Export CSV</button>
+                                <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ พิมพ์รายงาน</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="admin-table" id="report3-table">
+                                <thead>
+                                    <tr>
+                                        <th>ชื่อหมวดหมู่</th>
+                                        <th>จำนวนเล่มในระบบ</th>
+                                        <th>จำนวนรายการที่ขายได้</th>
+                                        <th>ยอดขายรวม (บาท)</th>
+                                        <th>สัดส่วนยอดขาย (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <details class="sql-accordion">
+                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN หลายตาราง, GROUP BY, SUM)</summary>
+                            <pre class="sql-code-block">
+SELECT 
+    c.category_id,
+    c.name AS category_name,
+    COUNT(DISTINCT b.ebook_id) AS total_active_titles,
+    COUNT(oi.order_item_id) AS total_items_sold,
+    SUM(oi.price_at_purchase) AS total_category_revenue,
+    ROUND(SUM(oi.price_at_purchase) * 100.0 / (
+        SELECT SUM(oi2.price_at_purchase) 
+        FROM order_items oi2 
+        JOIN orders o2 ON oi2.order_id = o2.order_id 
+        WHERE o2.status = 'confirmed'
+    ), 2) AS revenue_percentage
+FROM categories c
+JOIN ebooks b ON c.category_id = b.category_id
+JOIN order_items oi ON b.ebook_id = oi.ebook_id
+JOIN orders o ON oi.order_id = o.order_id
+WHERE o.status = 'confirmed'
+GROUP BY c.category_id, c.name
+ORDER BY total_category_revenue DESC;
+                            </pre>
+                        </details>
+                    </div>
+                </div>
+
+                <!-- Report Container 4 -->
+                <div id="report-tab-4" class="report-content-panel" style="display:none;">
+                    <div class="data-table-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <h2 style="font-size:1.35rem;">รายงานที่ 4: พฤติกรรมลูกค้าและคำสั่งซื้อ (Customer Insights)</h2>
+                                <p style="color:var(--text-secondary); font-size:0.88rem; margin-top:4px;">
+                                    <strong>คำถามที่ตอบ:</strong> ลูกค้ารายใดซื้อบ่อยหรือมียอดซื้อสะสมสูง (Top Spenders) และสถานะมีจำนวนเท่าใด?
+                                </p>
+                                <div style="font-size:0.8rem; color:#a5b4fc; margin-top:4px;">
+                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายภานุวัฒน์ แสงเครือ (67332110248-5)
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(4, 'customer_insights')">📥 Export CSV</button>
+                                <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ พิมพ์รายงาน</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="admin-table" id="report4-table">
+                                <thead>
+                                    <tr>
+                                        <th>ชื่อ-นามสกุลลูกค้า</th>
+                                        <th>Username / Email</th>
+                                        <th>ออเดอร์ทั้งหมด</th>
+                                        <th>ยืนยันแล้ว</th>
+                                        <th>รอตรวจ</th>
+                                        <th>ยกเลิก</th>
+                                        <th>ยอดซื้อสะสมสุทธิ (บาท)</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <details class="sql-accordion">
+                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, HAVING, COUNT, SUM, เงื่อนไขสถานะ)</summary>
+                            <pre class="sql-code-block">
+SELECT 
+    u.user_id,
+    u.username,
+    u.full_name,
+    u.email,
+    COUNT(o.order_id) AS total_orders,
+    SUM(CASE WHEN o.status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed_orders,
+    SUM(CASE WHEN o.status = 'pending' THEN 1 ELSE 0 END) AS pending_orders,
+    SUM(CASE WHEN o.status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_orders,
+    COALESCE(SUM(CASE WHEN o.status = 'confirmed' THEN o.total_amount ELSE 0 END), 0) AS total_spent
+FROM users u
+JOIN orders o ON u.user_id = o.user_id
+WHERE u.role_id = 1
+GROUP BY u.user_id, u.username, u.full_name, u.email
+HAVING total_orders >= 2
+ORDER BY total_spent DESC, total_orders DESC;
+                            </pre>
+                        </details>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 5. USERS & ROLES VIEW -->
+            <!-- ========================================================= -->
+            <div id="view-users" style="display:none;">
+                <div class="data-table-card">
+                    <h3 style="margin-bottom:16px;">ข้อมูลผู้ใช้งานในระบบและการกำหนดสิทธิ์</h3>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>ชื่อบัญชี</th>
+                                    <th>อีเมล</th>
+                                    <th>คำสั่งซื้อทั้งหมด</th>
+                                    <th>บทบาท (Role)</th>
+                                    <th>การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Slip Review Modal -->
+    <div class="modal-overlay" id="slip-modal">
+        <div class="modal-card" style="max-width:520px; text-align:center;">
+            <button class="modal-close" onclick="closeSlipModal()">✕</button>
+            <h3 style="margin-bottom:12px;" id="slip-modal-title">ตรวจสอบหลักฐานการชำระเงิน</h3>
+            <div id="slip-img-container" style="margin-bottom:16px;">
+                <img src="" id="slip-modal-img" class="slip-viewer-img" alt="Slip Preview">
+            </div>
+            <div id="slip-order-details" style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:20px; text-align:left; background:var(--bg-surface-elevated); padding:12px; border-radius:var(--radius-sm);">
+                <!-- Order details -->
+            </div>
+            <div style="display:flex; gap:12px; justify-content:center;">
+                <button class="btn btn-primary" id="btn-approve-slip" style="background:#059669;" onclick="confirmOrderFromSlip()">
+                    ✓ อนุมัติ & ปลดล็อกดาวน์โหลด
+                </button>
+                <button class="btn btn-secondary" id="btn-reject-slip" style="color:var(--danger);" onclick="cancelOrderFromSlip()">
+                    ✕ ปฏิเสธคำสั่งซื้อ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add E-Book Modal -->
+    <div class="modal-overlay" id="add-ebook-modal">
+        <div class="modal-card" style="max-width:580px;">
+            <button class="modal-close" onclick="closeAddEbookModal()">✕</button>
+            <h2 style="font-size:1.3rem; margin-bottom:16px;">เพิ่มหนังสือ E-Book เล่มใหม่</h2>
+            <form id="add-ebook-form" onsubmit="submitNewEbook(event)">
+                <div style="margin-bottom:12px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ชื่อเรื่อง E-Book *</label>
+                    <input type="text" id="new-book-title" required class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                    <div>
+                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">หมวดหมู่ *</label>
+                        <select id="new-book-category" required class="sort-select" style="width:100%;">
+                            <!-- Loaded via JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ผู้แต่ง *</label>
+                        <select id="new-book-author" required class="sort-select" style="width:100%;">
+                            <!-- Loaded via JS -->
+                        </select>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                    <div>
+                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ราคาขาย (บาท) *</label>
+                        <input type="number" step="0.01" min="0" id="new-book-price" required class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ISBN (ถ้ามี)</label>
+                        <input type="text" id="new-book-isbn" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                    </div>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">คำอธิบายหนังสือ</label>
+                    <textarea id="new-book-desc" rows="3" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">บันทึกข้อมูลหนังสือ ➔</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit E-Book Modal (ตรงตามข้อ 3: จัดการ E-Book แก้ไขราคาและลิงก์ดาวน์โหลด) -->
+    <div class="modal-overlay" id="edit-ebook-modal">
+        <div class="modal-card" style="max-width:580px;">
+            <button class="modal-close" onclick="closeEditEbookModal()">✕</button>
+            <h2 style="font-size:1.3rem; margin-bottom:16px;">แก้ไขข้อมูลหนังสือ E-Book</h2>
+            <form id="edit-ebook-form" onsubmit="submitEditEbook(event)">
+                <input type="hidden" id="edit-book-id">
+                <div style="margin-bottom:12px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ชื่อเรื่อง E-Book *</label>
+                    <input type="text" id="edit-book-title" required class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                    <div>
+                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">หมวดหมู่ *</label>
+                        <select id="edit-book-category" required class="sort-select" style="width:100%;">
+                            <!-- Loaded via JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ผู้แต่ง *</label>
+                        <select id="edit-book-author" required class="sort-select" style="width:100%;">
+                            <!-- Loaded via JS -->
+                        </select>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                    <div>
+                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ราคาขาย (บาท) *</label>
+                        <input type="number" step="0.01" min="0" id="edit-book-price" required class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ISBN</label>
+                        <input type="text" id="edit-book-isbn" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ที่อยู่ไฟล์ดาวน์โหลด (Full File URL) *</label>
+                    <input type="text" id="edit-book-file-url" required class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">คำอธิบายหนังสือ</label>
+                    <textarea id="edit-book-desc" rows="3" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">บันทึกการแก้ไข ➔</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Category Modal (ตรงตามข้อ 3: เพิ่มหมวดหมู่) -->
+    <div class="modal-overlay" id="add-category-modal">
+        <div class="modal-card" style="max-width:500px;">
+            <button class="modal-close" onclick="closeAddCategoryModal()">✕</button>
+            <h2 style="font-size:1.3rem; margin-bottom:16px;">เพิ่มหมวดหมู่หนังสือใหม่</h2>
+            <form id="add-category-form" onsubmit="submitNewCategory(event)">
+                <div style="margin-bottom:12px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ชื่อหมวดหมู่ *</label>
+                    <input type="text" id="new-cat-name" required placeholder="เช่น วิทยาศาสตร์, ศิลปะ" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">Slug (ภาษาอังกฤษพิมพ์เล็ก ไม่มีเว้นวรรค)</label>
+                    <input type="text" id="new-cat-slug" placeholder="เช่น science, art (เว้นว่างเพื่อสร้างอัตโนมัติ)" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">คำอธิบายหมวดหมู่</label>
+                    <textarea id="new-cat-desc" rows="2" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">บันทึกหมวดหมู่ ➔</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="/js/admin.js"></script>
+</body>
+</html>

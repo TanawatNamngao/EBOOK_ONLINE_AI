@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 480" width="350" height="480">
+  <rect width="350" height="480" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <rect width="350" height="90" fill="#0284c7" rx="12"/>
+  <text x="175" y="45" fill="#ffffff" font-family="sans-serif" font-weight="bold" font-size="18" text-anchor="middle">ใบเสร็จรับเงินจำลอง / SLIP</text>
+  <text x="175" y="70" fill="rgba(255,255,255,0.9)" font-family="sans-serif" font-size="12" text-anchor="middle">MOCK PAYMENT TRANSFER #25</text>
+  
+  <text x="30" y="130" fill="#64748b" font-family="sans-serif" font-size="12">สถานะ:</text>
+  <text x="320" y="130" fill="#16a34a" font-family="sans-serif" font-weight="bold" font-size="13" text-anchor="end">สำเร็จ (SIMULATED)</text>
+  
+  <line x1="30" y1="150" x2="320" y2="150" stroke="#e2e8f0" stroke-width="1"/>
+  
+  <text x="30" y="180" fill="#64748b" font-family="sans-serif" font-size="12">รหัสธุรกรรม:</text>
+  <text x="320" y="180" fill="#0f172a" font-family="monospace" font-size="12" text-anchor="end">TXN20260927-2588</text>
+
+  <text x="30" y="215" fill="#64748b" font-family="sans-serif" font-size="12">ช่องทาง:</text>
+  <text x="320" y="215" fill="#0f172a" font-family="sans-serif" font-size="12" text-anchor="end">PromptPay QR Code</text>
+
+  <rect x="30" y="250" width="290" height="70" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-dasharray="4"/>
+  <text x="175" y="280" fill="#64748b" font-family="sans-serif" font-size="12" text-anchor="middle">ยอดเงินที่ชำระจำลอง</text>
+  <text x="175" y="306" fill="#0369a1" font-family="sans-serif" font-weight="bold" font-size="20" text-anchor="middle">ชำระแล้วเรียบร้อย</text>
+
+  <text x="175" y="440" fill="#94a3b8" font-family="sans-serif" font-size="11" text-anchor="middle">หลักฐานจำลองเพื่อการศึกษา วิชา Database</text>
+</svg>
