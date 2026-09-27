@@ -53,14 +53,55 @@ function getCurrentUser(req) {
 app.post('/api/auth/register', (req, res) => {
     try {
         let { username, email, password, full_name, phone } = req.body;
-        if (!email || !password || !full_name) {
-            return res.status(400).json({ error: 'กรุณากรอกชื่อ-นามสกุล, อีเมล และรหัสผ่านให้ครบถ้วน' });
+        
+        // 1. ตรวจสอบข้อมูลบังคับ (Required Fields)
+        if (!full_name || !full_name.trim()) {
+            return res.status(400).json({ error: 'กรุณากรอกชื่อ-นามสกุล' });
         }
-        if (password.length < 6) {
-            return res.status(400).json({ error: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' });
+        if (!email || !email.trim()) {
+            return res.status(400).json({ error: 'กรุณากรอกอีเมล' });
+        }
+        if (!password) {
+            return res.status(400).json({ error: 'กรุณากรอกรหัสผ่าน' });
         }
 
-        // Auto-generate username from email prefix if omitted
+        full_name = full_name.trim();
+        email = email.trim().toLowerCase();
+        phone = phone ? phone.trim() : null;
+
+        // 2. มาตรฐานชื่อ-นามสกุล: ความยาว 3-100 ตัวอักษร และไม่มีอักขระพิเศษอันตราย
+        if (full_name.length < 3 || full_name.length > 100) {
+            return res.status(400).json({ error: 'ชื่อ-นามสกุล ต้องมีความยาวระหว่าง 3 ถึง 100 ตัวอักษร' });
+        }
+        const nameRegex = /^[a-zA-Zก-๙\s.'-]+$/;
+        if (!nameRegex.test(full_name)) {
+            return res.status(400).json({ error: 'ชื่อ-นามสกุล ต้องประกอบด้วยตัวอักษรภาษาไทยหรืออังกฤษเท่านั้น ห้ามมีสัญลักษณ์พิเศษหรือตัวเลข' });
+        }
+
+        // 3. มาตรฐานอีเมล: รูปแบบ RFC Email Validation
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email) || email.length > 120) {
+            return res.status(400).json({ error: 'รูปแบบอีเมลไม่ถูกต้องตามมาตรฐานสากล (เช่น yourname@domain.com)' });
+        }
+
+        // 4. มาตรฐานเบอร์โทรศัพท์ (ถ้ามีการกรอก): 9-10 หลัก เริ่มต้นด้วย 0
+        if (phone) {
+            const cleanPhone = phone.replace(/[-\s]/g, '');
+            const phoneRegex = /^0[0-9]{8,9}$/;
+            if (!phoneRegex.test(cleanPhone)) {
+                return res.status(400).json({ error: 'เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 0 และเป็นตัวเลข 9-10 หลัก (เช่น 081-234-5678)' });
+            }
+        }
+
+        // 5. มาตรฐานรหัสผ่าน: อย่างน้อย 6 ตัวอักษร และไม่เกิน 100 ตัวอักษร
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษรขึ้นไป เพื่อความปลอดภัย' });
+        }
+        if (password.length > 100) {
+            return res.status(400).json({ error: 'รหัสผ่านต้องมีความยาวไม่เกิน 100 ตัวอักษร' });
+        }
+
+        // 6. กำหนด Username อัตโนมัติถ้าไม่ได้ระบุ
         if (!username || !username.trim()) {
             const baseUser = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') || 'user';
             let candidate = baseUser;
@@ -69,18 +110,25 @@ app.post('/api/auth/register', (req, res) => {
                 candidate = `${baseUser}${counter++}`;
             }
             username = candidate;
+        } else {
+            username = username.trim().toLowerCase();
+            if (username.length < 3 || username.length > 50) {
+                return res.status(400).json({ error: 'ชื่อผู้ใช้งาน (Username) ต้องมีความยาว 3-50 ตัวอักษร' });
+            }
+            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                return res.status(400).json({ error: 'ชื่อผู้ใช้งานต้องเป็นตัวอักษรภาษาอังกฤษ ตัวเลข หรือขีดล่าง (_) เท่านั้น' });
+            }
         }
 
-        // Check duplicate email
-        const existingEmail = db.prepare('SELECT user_id FROM users WHERE email = ?').get(email.trim());
+        // 7. ตรวจสอบข้อมูลซ้ำในฐานข้อมูล (UNIQUE Constraints)
+        const existingEmail = db.prepare('SELECT user_id FROM users WHERE email = ?').get(email);
         if (existingEmail) {
-            return res.status(400).json({ error: 'อีเมลนี้ถูกใช้งานในระบบแล้ว กรุณาเข้าสู่ระบบ' });
+            return res.status(400).json({ error: 'อีเมลนี้มีผู้ใช้งานในระบบแล้ว กรุณาใช้อีเมลอื่น หรือกดเข้าสู่ระบบ' });
         }
 
-        // Check duplicate username
-        const existingUser = db.prepare('SELECT user_id FROM users WHERE username = ?').get(username.trim());
+        const existingUser = db.prepare('SELECT user_id FROM users WHERE username = ?').get(username);
         if (existingUser) {
-            return res.status(400).json({ error: 'ชื่อบัญชีนี้มีผู้ใช้งานแล้ว' });
+            return res.status(400).json({ error: 'ชื่อบัญชีนี้มีผู้ใช้งานแล้ว กรุณาระบุชื่อผู้ใช้งานอื่น' });
         }
 
         const insertUser = db.prepare(`

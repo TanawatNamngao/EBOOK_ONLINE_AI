@@ -429,14 +429,29 @@
                         <label class="auth-label">
                             <span>🔒</span> รหัสผ่าน (Password) <span class="required">*</span>
                         </label>
-                        <input type="password" id="reg-password" class="auth-input" placeholder="อย่างน้อย 6 ตัวอักษร" minlength="6" required>
+                        <input type="password" id="reg-password" class="auth-input" placeholder="อย่างน้อย 6 ตัวอักษร" minlength="6" oninput="validatePasswordInputs()" required>
                     </div>
                     <div>
                         <label class="auth-label">
                             <span>🔒</span> ยืนยันรหัสผ่าน <span class="required">*</span>
                         </label>
-                        <input type="password" id="reg-password-confirm" class="auth-input" placeholder="ยืนยันรหัสผ่านอีกครั้ง" minlength="6" required>
+                        <input type="password" id="reg-password-confirm" class="auth-input" placeholder="ยืนยันรหัสผ่านอีกครั้ง" minlength="6" oninput="validatePasswordInputs()" required>
                     </div>
+                </div>
+
+                <div id="password-feedback-msg" style="font-size:0.8rem; margin-top:-10px; margin-bottom:14px; min-height:18px;"></div>
+
+                <!-- Standards & Requirements Guide Box -->
+                <div class="standards-guide-box" style="margin-bottom: 18px; padding: 12px 14px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; font-size: 0.8rem; color: #94a3b8;">
+                    <div style="font-weight: bold; color: #fbbf24; margin-bottom: 6px; display:flex; align-items:center; gap:6px;">
+                        <span>🛡️</span> ข้อกำหนดมาตรฐานการกรอกข้อมูล (Validation Rules):
+                    </div>
+                    <ul style="margin: 0; padding-left: 18px; line-height: 1.55;">
+                        <li><strong style="color:#e2e8f0;">ชื่อ-นามสกุล:</strong> 3-100 ตัวอักษร (ห้ามมีตัวเลข, โค้ด HTML หรือสัญลักษณ์พิเศษ)</li>
+                        <li><strong style="color:#e2e8f0;">อีเมล:</strong> รูปแบบสากล (เช่น user@domain.com) และ<span style="color:#f87171;">ห้ามซ้ำ</span>กับในระบบ</li>
+                        <li><strong style="color:#e2e8f0;">เบอร์โทรศัพท์:</strong> ตัวเลข 9-10 หลัก ขึ้นต้นด้วย 0 (ถ้ากรอก)</li>
+                        <li><strong style="color:#e2e8f0;">รหัสผ่าน:</strong> อย่างน้อย 6 ตัวอักษรขึ้นไป และต้องตรงกันทั้ง 2 ช่อง</li>
+                    </ul>
                 </div>
 
                 <button type="submit" class="auth-btn-submit" id="btn-submit-reg">
@@ -569,15 +584,66 @@
             }, 3500);
         }
 
+        // Real-time password validation indicator
+        function validatePasswordInputs() {
+            const p1 = document.getElementById('reg-password').value;
+            const p2 = document.getElementById('reg-password-confirm').value;
+            const feedback = document.getElementById('password-feedback-msg');
+
+            if (!p1 && !p2) {
+                feedback.innerHTML = '';
+                return;
+            }
+
+            if (p1.length < 6) {
+                feedback.innerHTML = '<span style="color: #f87171;">⚠️ รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร (ปัจจุบัน ' + p1.length + ' ตัว)</span>';
+                return;
+            }
+
+            if (p2) {
+                if (p1 === p2) {
+                    feedback.innerHTML = '<span style="color: #4ade80;">✓ รหัสผ่านตรงกันและถูกต้องตามมาตรฐาน</span>';
+                } else {
+                    feedback.innerHTML = '<span style="color: #f87171;">✗ รหัสผ่านทั้งสองช่องยังไม่ตรงกัน</span>';
+                }
+            } else {
+                feedback.innerHTML = '<span style="color: #38bdf8;">ℹ️ ความยาวรหัสผ่านถูกต้อง (กรุณากรอกช่องยืนยันรหัสผ่าน)</span>';
+            }
+        }
+
         // Handle Registration
         async function handleRegisterSubmit(e) {
             e.preventDefault();
             const fullName = document.getElementById('reg-fullname').value.trim();
-            const email = document.getElementById('reg-email').value.trim();
+            const email = document.getElementById('reg-email').value.trim().toLowerCase();
             const phone = document.getElementById('reg-phone').value.trim();
             const password = document.getElementById('reg-password').value;
             const passwordConfirm = document.getElementById('reg-password-confirm').value;
 
+            // Client-side strict validation
+            if (fullName.length < 3 || fullName.length > 100) {
+                showToast('ชื่อ-นามสกุล ต้องมีความยาวระหว่าง 3 ถึง 100 ตัวอักษร', 'error');
+                return;
+            }
+            if (!/^[a-zA-Zก-๙\s.'-]+$/.test(fullName)) {
+                showToast('ชื่อ-นามสกุล ต้องเป็นตัวอักษรภาษาไทยหรืออังกฤษเท่านั้น ห้ามมีตัวเลขหรือสัญลักษณ์พิเศษ', 'error');
+                return;
+            }
+            if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+                showToast('รูปแบบอีเมลไม่ถูกต้องตามมาตรฐานสากล (เช่น yourname@domain.com)', 'error');
+                return;
+            }
+            if (phone) {
+                const cleanPhone = phone.replace(/[-\s]/g, '');
+                if (!/^0[0-9]{8,9}$/.test(cleanPhone)) {
+                    showToast('เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 0 และมีตัวเลข 9-10 หลัก', 'error');
+                    return;
+                }
+            }
+            if (password.length < 6) {
+                showToast('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร', 'error');
+                return;
+            }
             if (password !== passwordConfirm) {
                 showToast('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน', 'error');
                 return;
