@@ -14,7 +14,8 @@
     "dev": "node server.js",
     "test": "node tests/run_tests.js",
     "seed": "node database/db.js",
-    "assets": "node scripts/generate_assets.js"
+    "assets": "node scripts/generate_assets.js",
+    "postinstall": "node scripts/generate_assets.js"
   },
   "keywords": [],
   "author": "",
