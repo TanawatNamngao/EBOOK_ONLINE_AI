@@ -139,6 +139,59 @@ function handleSortChange(sortVal) {
     fetchEbooks();
 }
 
+// Fallback cover generator in case of network glitch or image blocker
+function getCoverDataUri(title, category, id) {
+    const colors = [
+        ['#1e3a8a', '#3b82f6'],
+        ['#065f46', '#10b981'],
+        ['#581c87', '#a855f7'],
+        ['#9a3412', '#f97316'],
+        ['#115e59', '#14b8a6'],
+        ['#0e7490', '#06b6d4'],
+        ['#9f1239', '#f43f5e'],
+        ['#1e1b4b', '#6366f1'],
+        ['#78350f', '#f59e0b'],
+        ['#1d4ed8', '#38bdf8'],
+        ['#991b1b', '#ef4444'],
+        ['#1e293b', '#0ea5e9']
+    ];
+    const pair = colors[(id - 1) % colors.length] || ['#312e81', '#6366f1'];
+    const safeTitle = (title || 'E-BOOK').substring(0, 30);
+    const safeCat = (category || 'EBOOK').substring(0, 8).toUpperCase();
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 580" width="400" height="580">
+      <defs>
+        <linearGradient id="fallback_grad_${id}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${pair[0]}" />
+          <stop offset="100%" stop-color="${pair[1]}" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="580" rx="16" fill="${pair[0]}" />
+      <rect width="400" height="580" rx="16" fill="url(#fallback_grad_${id})" />
+      <rect x="0" y="0" width="28" height="580" fill="rgba(0,0,0,0.25)" />
+      <rect x="46" y="44" width="80" height="26" rx="6" fill="rgba(255,255,255,0.25)" />
+      <text x="86" y="62" fill="#ffffff" font-family="sans-serif" font-weight="bold" font-size="12" text-anchor="middle">${safeCat}</text>
+      <text x="340" y="64" fill="#fbbf24" font-family="sans-serif" font-weight="bold" font-size="18" text-anchor="middle">★</text>
+      <g transform="translate(48, 230)">
+        <text x="0" y="0" fill="#ffffff" font-family="sans-serif" font-weight="bold" font-size="22">${safeTitle}</text>
+        <line x1="0" y1="40" x2="100" y2="40" stroke="rgba(255,255,255,0.6)" stroke-width="3" stroke-linecap="round"/>
+      </g>
+      <rect x="46" y="480" width="308" height="46" rx="10" fill="rgba(0,0,0,0.35)" />
+      <text x="64" y="509" fill="rgba(255,255,255,0.85)" font-family="sans-serif" font-size="13">DIGITAL E-BOOK EDITION</text>
+      <text x="334" y="509" fill="#fbbf24" font-family="sans-serif" font-weight="bold" font-size="14" text-anchor="end">2026</text>
+    </svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+function handleCoverError(img, id, title, cat) {
+    img.onerror = null;
+    img.src = getCoverDataUri(title, cat, id);
+}
+
+function escapeAttr(str) {
+    if (!str) return '';
+    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
 async function fetchEbooks() {
     const grid = document.getElementById('books-grid');
     const countLabel = document.getElementById('catalog-count-label');
@@ -171,9 +224,12 @@ async function fetchEbooks() {
             card.className = 'book-card';
             card.id = `book-card-${b.ebook_id}`;
 
+            const safeTitle = escapeAttr(b.title);
+            const safeCat = escapeAttr(b.category_name);
+
             card.innerHTML = `
                 <div class="book-cover-wrap" onclick="openBookDetail(${b.ebook_id})" style="cursor:pointer;">
-                    <img src="${b.cover_image}" class="book-cover-img" alt="${b.title}" loading="lazy">
+                    <img src="${b.cover_image}" class="book-cover-img" alt="${b.title}" onerror="handleCoverError(this, ${b.ebook_id}, '${safeTitle}', '${safeCat}')">
                     <span class="book-badge-category">${b.category_name}</span>
                 </div>
                 <div class="book-info">
@@ -211,7 +267,7 @@ async function openBookDetail(ebookId) {
         content.innerHTML = `
             <div style="display:flex; gap:24px; flex-wrap:wrap;">
                 <div style="width:200px; flex-shrink:0;">
-                    <img src="${book.cover_image}" style="width:100%; border-radius:var(--radius-md); box-shadow:var(--shadow-md);" alt="${book.title}">
+                    <img src="${book.cover_image}" style="width:100%; border-radius:var(--radius-md); box-shadow:var(--shadow-md);" alt="${book.title}" onerror="handleCoverError(this, ${book.ebook_id}, '${escapeAttr(book.title)}', '${escapeAttr(book.category_name)}')">
                     <div style="margin-top:14px; text-align:center;">
                         <span class="status-badge ${book.is_published ? 'status-confirmed' : 'status-cancelled'}">
                             ${book.is_published ? '✓ พร้อมจำหน่าย' : 'ปิดจำหน่าย'}

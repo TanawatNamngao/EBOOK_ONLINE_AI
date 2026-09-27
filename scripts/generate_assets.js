@@ -32,12 +32,13 @@ books.forEach(b => {
       <stop offset="0%" stop-color="${b.c1}" />
       <stop offset="100%" stop-color="${b.c2}" />
     </linearGradient>
-    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+    <pattern id="grid_${b.id}" width="24" height="24" patternUnits="userSpaceOnUse">
       <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
     </pattern>
   </defs>
+  <rect width="400" height="580" rx="16" fill="${b.c1}" />
   <rect width="400" height="580" rx="16" fill="url(#grad_${b.id})" />
-  <rect width="400" height="580" fill="url(#grid)" />
+  <rect width="400" height="580" fill="url(#grid_${b.id})" />
   <rect x="0" y="0" width="28" height="580" fill="rgba(0,0,0,0.25)" />
   <line x1="28" y1="0" x2="28" y2="580" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
   
@@ -61,6 +62,7 @@ books.forEach(b => {
 
 // Default cover
 fs.copyFileSync(path.join(coversDir, 'book1.svg'), path.join(coversDir, 'default.svg'));
+
 
 // Generate mock slips
 for (let i = 1; i <= 32; i++) {
