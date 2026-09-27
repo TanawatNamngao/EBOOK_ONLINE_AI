@@ -15,7 +15,9 @@
     "test": "node tests/run_tests.js",
     "seed": "node database/db.js",
     "assets": "node scripts/generate_assets.js",
-    "postinstall": "node scripts/generate_assets.js"
+    "postinstall": "node scripts/generate_assets.js",
+    "build:pdf": "node scripts/build_docs_pdf.js",
+    "build:docx": "py scripts/build_docs_docx.py"
   },
   "keywords": [],
   "author": "",
@@ -26,5 +28,8 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "multer": "^2.4.0"
+  },
+  "devDependencies": {
+    "marked": "^18.0.14"
   }
 }
