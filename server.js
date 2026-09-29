@@ -1118,6 +1118,20 @@ app.get('/api/admin/dashboard-stats', (req, res) => {
     }
 });
 
+// Export current SQLite Database file for grading / verification
+app.get('/api/admin/export-db', (req, res) => {
+    try {
+        const dbPath = path.join(__dirname, 'database', 'ebookstore.db');
+        if (fs.existsSync(dbPath)) {
+            res.download(dbPath, 'ebookstore.db');
+        } else {
+            res.status(404).json({ error: 'ไม่พบไฟล์ฐานข้อมูล' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Fallback to index.html
 app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));

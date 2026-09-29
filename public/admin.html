@@ -116,6 +116,21 @@
                     </div>
                 </div>
 
+                <!-- Live Database Export Action Bar for Teacher/Evaluation -->
+                <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <div style="font-weight:bold; font-size:1rem; display:flex; align-items:center; gap:8px;">
+                            <span>💾</span> ฐานข้อมูลจริง (SQLite Database File):
+                        </div>
+                        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:2px;">
+                            สามารถดาวน์โหลดไฟล์ <code>ebookstore.db</code> ล่าสุดที่รันอยู่บน Server ไปเปิดดูใน DB Browser เพื่อตรวจข้อมูลใหม่ได้ทันที
+                        </div>
+                    </div>
+                    <a href="/api/admin/export-db" download="ebookstore.db" class="btn btn-primary btn-sm" style="background:#10b981; border-color:#059669; padding:8px 16px; text-decoration:none;">
+                        📥 ดาวน์โหลดไฟล์ ebookstore.db ล่าสุด
+                    </a>
+                </div>
+
                 <!-- Recent Orders Alert Box -->
                 <div class="data-table-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
