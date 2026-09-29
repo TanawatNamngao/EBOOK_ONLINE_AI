@@ -2,6 +2,15 @@
 // EBOOK_ONLINE: Admin Portal & Analytics (JavaScript)
 // ====================================================================
 
+let currentUserId = parseInt(localStorage.getItem('ebook_user_id')) || 2;
+
+async function apiFetch(url, options = {}) {
+    const headers = options.headers || {};
+    headers['x-user-id'] = currentUserId;
+    options.headers = headers;
+    return await fetch(url, options);
+}
+
 let currentActiveOrder = null;
 let allAdminOrders = [];
 let allAdminCategories = [];
