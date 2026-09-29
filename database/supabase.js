@@ -1,0 +1,194 @@
+// ====================================================================
+// EBOOK_ONLINE: Supabase Cloud PostgreSQL Real-time Sync Engine
+// ====================================================================
+
+const { Pool } = require('pg');
+
+const SUPABASE_DB_URL = process.env.DATABASE_URL || 
+    'postgresql://postgres.skzpfkrwvsiqxamgfbey:cNex6904679437@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres';
+
+const pool = new Pool({
+    connectionString: SUPABASE_DB_URL,
+    ssl: { rejectUnauthorized: false },
+    max: 5,
+    idleTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000,
+    allowExitOnIdle: true
+});
+
+// Test connection on load
+pool.query('SELECT NOW()')
+    .then(r => console.log('☁️  Connected to Supabase PostgreSQL successfully! (Cloud Realtime Active)'))
+    .catch(err => console.warn('⚠️  Supabase connection note:', err.message));
+
+// Helper: Sync new user to Supabase
+async function syncUserToSupabase(user) {
+    try {
+        const query = `
+            INSERT INTO users (user_id, role_id, username, email, password_hash, full_name, phone)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (user_id) DO UPDATE 
+            SET full_name = EXCLUDED.full_name, phone = EXCLUDED.phone, role_id = EXCLUDED.role_id;
+        `;
+        await pool.query(query, [
+            user.user_id,
+            user.role_id || 1,
+            user.username,
+            user.email,
+            user.password_hash || user.password || '123456',
+            user.full_name,
+            user.phone || null
+        ]);
+        console.log(`☁️  Synced user "${user.username}" to Supabase Cloud!`);
+    } catch (err) {
+        console.error('⚠️  Failed to sync user to Supabase:', err.message);
+    }
+}
+
+// Helper: Sync updated profile to Supabase
+async function syncProfileToSupabase(userId, fullName, phone) {
+    try {
+        const query = `
+            UPDATE users SET full_name = $1, phone = $2 WHERE user_id = $3;
+        `;
+        await pool.query(query, [fullName, phone || null, userId]);
+        console.log(`☁️  Synced profile update (User ID: ${userId}) to Supabase!`);
+    } catch (err) {
+        console.error('⚠️  Failed to sync profile update to Supabase:', err.message);
+    }
+}
+
+// Helper: Sync order to Supabase
+async function syncOrderToSupabase(order, items = []) {
+    try {
+        const orderQuery = `
+            INSERT INTO orders (order_id, order_number, user_id, total_amount, status)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (order_id) DO UPDATE 
+            SET status = EXCLUDED.status, updated_at = CURRENT_TIMESTAMP;
+        `;
+        await pool.query(orderQuery, [
+            order.order_id,
+            order.order_number,
+            order.user_id,
+            order.total_amount,
+            order.status || 'pending'
+        ]);
+
+        if (items && items.length > 0) {
+            for (const item of items) {
+                const itemQuery = `
+                    INSERT INTO order_items (order_id, ebook_id, price_at_purchase)
+                    VALUES ($1, $2, $3)
+                    ON CONFLICT (order_id, ebook_id) DO UPDATE 
+                    SET price_at_purchase = EXCLUDED.price_at_purchase;
+                `;
+                await pool.query(itemQuery, [order.order_id, item.ebook_id, item.price]);
+            }
+        }
+        console.log(`☁️  Synced order "${order.order_number}" to Supabase Cloud!`);
+    } catch (err) {
+        console.error('⚠️  Failed to sync order to Supabase:', err.message);
+    }
+}
+
+// Helper: Sync payment to Supabase
+async function syncPaymentToSupabase(payment) {
+    try {
+        const query = `
+            INSERT INTO payments (order_id, payment_method, payment_status, slip_image_url, amount, note)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (order_id) DO UPDATE 
+            SET payment_status = EXCLUDED.payment_status,
+                slip_image_url = EXCLUDED.slip_image_url,
+                verified_at = CASE WHEN EXCLUDED.payment_status = 'verified' THEN CURRENT_TIMESTAMP ELSE payments.verified_at END;
+        `;
+        await pool.query(query, [
+            payment.order_id,
+            payment.payment_method || 'promptpay_qr',
+            payment.payment_status || 'submitted',
+            payment.slip_image_url || null,
+            payment.amount,
+            payment.note || null
+        ]);
+        console.log(`☁️  Synced payment for Order #${payment.order_id} to Supabase!`);
+    } catch (err) {
+        console.error('⚠️  Failed to sync payment to Supabase:', err.message);
+    }
+}
+
+// Helper: Sync order status update (e.g. admin approval)
+async function syncOrderStatusToSupabase(orderId, status) {
+    try {
+        await pool.query(`UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE order_id = $2;`, [status, orderId]);
+        if (status === 'confirmed') {
+            await pool.query(`UPDATE payments SET payment_status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE order_id = $1;`, [orderId]);
+        }
+        console.log(`☁️  Synced order #${orderId} status "${status}" to Supabase!`);
+    } catch (err) {
+        console.error('⚠️  Failed to sync status update to Supabase:', err.message);
+    }
+}
+
+function toSqliteDate(val) {
+    if (!val) return null;
+    if (val instanceof Date) return val.toISOString().replace('T', ' ').substring(0, 19);
+    return String(val);
+}
+
+// Startup Sync: Pull latest records from Supabase into SQLite
+async function syncFromSupabaseToSQLite(sqliteDb) {
+    try {
+        console.log('🔄 Checking for new records from Supabase Cloud to SQLite...');
+        sqliteDb.pragma('foreign_keys = OFF');
+
+        // 1. Sync Users
+        const remoteUsers = await pool.query('SELECT user_id, role_id, username, email, password_hash, full_name, phone, created_at FROM users ORDER BY user_id ASC');
+        const insertUser = sqliteDb.prepare(`
+            INSERT OR REPLACE INTO users (user_id, role_id, username, email, password_hash, full_name, phone, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        const insertCart = sqliteDb.prepare(`INSERT OR IGNORE INTO carts (user_id) VALUES (?)`);
+
+        for (const u of remoteUsers.rows) {
+            insertUser.run(u.user_id, u.role_id, u.username, u.email, u.password_hash, u.full_name, u.phone, toSqliteDate(u.created_at));
+            insertCart.run(u.user_id);
+        }
+
+        // 2. Sync Orders
+        const remoteOrders = await pool.query('SELECT order_id, order_number, user_id, total_amount, status, created_at, updated_at FROM orders ORDER BY order_id ASC');
+        const insertOrder = sqliteDb.prepare(`
+            INSERT OR REPLACE INTO orders (order_id, order_number, user_id, total_amount, status, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const o of remoteOrders.rows) {
+            insertOrder.run(o.order_id, o.order_number, o.user_id, o.total_amount, o.status, toSqliteDate(o.created_at), toSqliteDate(o.updated_at));
+        }
+
+        // 3. Sync Payments
+        const remotePayments = await pool.query('SELECT payment_id, order_id, payment_method, payment_status, slip_image_url, amount, paid_at, verified_at, note FROM payments ORDER BY payment_id ASC');
+        const insertPayment = sqliteDb.prepare(`
+            INSERT OR REPLACE INTO payments (payment_id, order_id, payment_method, payment_status, slip_image_url, amount, paid_at, verified_at, note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const p of remotePayments.rows) {
+            insertPayment.run(p.payment_id, p.order_id, p.payment_method, p.payment_status, p.slip_image_url, p.amount, toSqliteDate(p.paid_at), toSqliteDate(p.verified_at), p.note);
+        }
+
+        sqliteDb.pragma('foreign_keys = ON');
+        console.log(`✅ Cloud Sync Complete: SQLite now has ${remoteUsers.rows.length} users, ${remoteOrders.rows.length} orders from Supabase!`);
+    } catch (err) {
+        sqliteDb.pragma('foreign_keys = ON');
+        console.warn('⚠️  Could not sync from Supabase on startup:', err.message);
+    }
+}
+
+module.exports = {
+    pool,
+    syncUserToSupabase,
+    syncProfileToSupabase,
+    syncOrderToSupabase,
+    syncPaymentToSupabase,
+    syncOrderStatusToSupabase,
+    syncFromSupabaseToSQLite
+};

@@ -5,6 +5,7 @@ const fs = require('fs');
 const multer = require('multer');
 const crypto = require('crypto');
 const db = require('./database/db');
+const supabaseSync = require('./database/supabase');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -176,6 +177,9 @@ app.post('/api/auth/register', (req, res) => {
         // Auto create cart for new user
         db.prepare('INSERT OR IGNORE INTO carts (user_id) VALUES (?)').run(newUser.user_id);
 
+        // Realtime sync to Supabase Cloud
+        try { supabaseSync.syncUserToSupabase({ ...newUser, password_hash: password }); } catch (e) {}
+
         res.status(201).json({ message: 'สร้างบัญชีสำเร็จ ยินดีต้อนรับสู่ระบบ!', user: newUser });
     } catch (err) {
         console.error('Register error:', err);
@@ -272,6 +276,10 @@ app.put('/api/auth/profile', (req, res) => {
             .run(full_name || user.full_name, phone || user.phone, user.user_id);
 
         const updated = db.prepare('SELECT user_id, role_id, username, email, full_name, phone FROM users WHERE user_id = ?').get(user.user_id);
+
+        // Realtime sync to Supabase Cloud
+        try { supabaseSync.syncProfileToSupabase(user.user_id, full_name || user.full_name, phone || user.phone); } catch (e) {}
+
         res.json({ message: 'แก้ไขข้อมูลสำเร็จ', user: updated });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -538,6 +546,15 @@ app.post('/api/orders/checkout', (req, res) => {
 
     try {
         const orderInfo = createOrderTransaction();
+
+        // Realtime sync to Supabase Cloud
+        try {
+            supabaseSync.syncOrderToSupabase(
+                { order_id: orderInfo.orderId, order_number: orderInfo.orderNumber, user_id: user.user_id, total_amount: orderInfo.totalAmount, status: 'pending' },
+                cartItems
+            );
+        } catch (e) {}
+
         res.status(201).json({ message: 'สั่งซื้อสำเร็จ กรุณาแจ้งชำระเงิน', order: orderInfo });
     } catch (err) {
         console.error('Checkout error:', err);
@@ -579,6 +596,18 @@ app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) 
         `).run(payment_method || 'promptpay_qr', slipUrl, order.total_amount, note || 'แจ้งชำระเงินจำลองแล้ว', orderId);
 
         db.prepare('UPDATE orders SET updated_at = CURRENT_TIMESTAMP WHERE order_id = ?').run(orderId);
+
+        // Realtime sync to Supabase Cloud
+        try {
+            supabaseSync.syncPaymentToSupabase({
+                order_id: orderId,
+                payment_method: payment_method || 'promptpay_qr',
+                payment_status: 'submitted',
+                slip_image_url: slipUrl,
+                amount: order.total_amount,
+                note: note || 'แจ้งชำระเงินจำลองแล้ว'
+            });
+        } catch (e) {}
 
         res.json({ message: 'แจ้งชำระเงินสำเร็จ กรุณารอผู้ดูแลระบบตรวจสอบหลักฐาน', slip_image_url: slipUrl });
     } catch (err) {
@@ -805,6 +834,10 @@ app.put('/api/admin/orders/:id/status', (req, res) => {
 
     try {
         updateStatusTransaction();
+
+        // Realtime sync to Supabase Cloud
+        try { supabaseSync.syncOrderStatusToSupabase(orderId, status); } catch (e) {}
+
         res.json({ message: `ปรับสถานะคำสั่งซื้อเป็น "${status}" เรียบร้อยแล้ว` });
     } catch (err) {
         res.status(500).json({ error: err.message });
