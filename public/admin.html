@@ -6,6 +6,13 @@
     <title>ระบบบริหารจัดการร้านและรายงานวิเคราะห์ - EBOOK_ONLINE</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/admin.css">
+    <script>
+        // Auth Guard: เช็คสิทธิ์ก่อนเข้าหน้า Admin
+        if (localStorage.getItem('ebook_user_role') !== 'admin') {
+            alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้ กรุณาเข้าสู่ระบบด้วยบัญชี Admin (username: admin, password: admin123)');
+            window.location.href = '/auth.html';
+        }
+    </script>
 </head>
 <body style="background: #090d16;">
 
