@@ -46,6 +46,9 @@
         <a href="/auth.html" class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start; margin-bottom:10px; color:#fbbf24; border-color:rgba(245,158,11,0.4); background:rgba(245,158,11,0.08);">
             👤 ระบบสมาชิก & สิทธิ์การใช้งาน
         </a>
+        <button class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start; margin-bottom:10px; color:#38bdf8; border-color:rgba(56,189,248,0.4); background:rgba(56,189,248,0.08);" onclick="openProfileModal()">
+            ✏️ แก้ไขข้อมูลส่วนตัว (Profile)
+        </button>
         <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px; font-weight:bold;">สลับบัญชีเพื่อทดสอบระบบ:</div>
         <button class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start; margin-bottom:6px;" onclick="switchUser(2, 'นายธนวัฒน์ นามเหง้า', 'thanawat')">
             👤 ธนวัฒน์ (ลูกค้า 1)
@@ -214,6 +217,25 @@
             <div id="orders-list-container" style="display:flex; flex-direction:column; gap:16px;">
                 <!-- Orders rendered via JS -->
             </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="profile-modal">
+        <div class="modal-card" style="max-width: 500px;">
+            <button class="modal-close" onclick="closeProfileModal()">✕</button>
+            <h2 style="font-size: 1.4rem; margin-bottom: 20px;">✏️ แก้ไขข้อมูลส่วนตัว</h2>
+            <form id="edit-profile-form" onsubmit="submitEditProfile(event)">
+                <div style="margin-bottom:12px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ชื่อ-นามสกุล (ต้องระบุ)</label>
+                    <input type="text" id="edit-profile-name" required class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">เบอร์โทรศัพท์ (ถ้ามี)</label>
+                    <input type="text" id="edit-profile-phone" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                </div>
+                <button type="submit" id="btn-submit-profile" class="btn btn-primary" style="width:100%;">บันทึกข้อมูล ➔</button>
+            </form>
         </div>
     </div>
 

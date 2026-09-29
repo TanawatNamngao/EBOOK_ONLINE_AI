@@ -673,3 +673,65 @@ async function loadMyOrders() {
         container.innerHTML = `<div style="color:var(--danger); padding:20px;">เกิดข้อผิดพลาด: ${err.message}</div>`;
     }
 }
+
+// ====================================================================
+// User Profile Logic
+// ====================================================================
+async function openProfileModal() {
+    toggleUserDropdown(); // Close the dropdown if open
+    document.getElementById('profile-modal').classList.add('active');
+    
+    // Fetch current user data
+    try {
+        const res = await apiFetch('/api/auth/me');
+        const data = await res.json();
+        if (res.ok && data.user) {
+            document.getElementById('edit-profile-name').value = data.user.full_name || '';
+            document.getElementById('edit-profile-phone').value = data.user.phone || '';
+        } else {
+            showToast('ไม่สามารถดึงข้อมูลโปรไฟล์ได้', 'error');
+        }
+    } catch (err) {
+        showToast('ข้อผิดพลาดเครือข่าย', 'error');
+    }
+}
+
+function closeProfileModal() {
+    document.getElementById('profile-modal').classList.remove('active');
+}
+
+async function submitEditProfile(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-profile');
+    btn.disabled = true;
+    btn.innerHTML = '🔄 กำลังบันทึก...';
+    
+    const fullName = document.getElementById('edit-profile-name').value;
+    const phone = document.getElementById('edit-profile-phone').value;
+    
+    try {
+        const res = await apiFetch('/api/auth/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ full_name: fullName, phone: phone })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            showToast('แก้ไขข้อมูลส่วนตัวสำเร็จ!', 'success');
+            // Update local state
+            currentUserName = data.user.full_name;
+            localStorage.setItem('ebook_user_name', data.user.full_name);
+            updateUserBadgeDisplay();
+            closeProfileModal();
+        } else {
+            showToast(data.error || 'เกิดข้อผิดพลาดในการบันทึก', 'error');
+        }
+    } catch (err) {
+        showToast('ข้อผิดพลาดเครือข่าย', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'บันทึกข้อมูล ➔';
+    }
+}
+
