@@ -212,6 +212,11 @@ app.post('/api/auth/login', (req, res) => {
     }
 });
 
+// Logout
+app.post('/api/auth/logout', (req, res) => {
+    res.json({ success: true, message: 'ออกจากระบบเรียบร้อยแล้ว' });
+});
+
 // Test accounts for demonstration
 app.get('/api/auth/test-accounts', (req, res) => {
     try {

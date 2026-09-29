@@ -43,10 +43,13 @@
                 </div>
             </nav>
 
-            <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border);">
+            <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px;">
                 <a href="/" class="btn btn-secondary btn-sm" style="width:100%; justify-content:center;">
                     🌐 กลับสู่หน้าร้าน
                 </a>
+                <button onclick="adminLogout()" class="btn btn-secondary btn-sm" style="width:100%; justify-content:center; color:#ef4444; border-color:rgba(239,68,68,0.4); background:rgba(239,68,68,0.08); font-weight:600;">
+                    🚪 ออกจากระบบ (Logout)
+                </button>
             </div>
         </aside>
 
@@ -64,6 +67,9 @@
                         <div style="font-size:0.75rem; color:#10b981;">● ออนไลน์ในระบบ</div>
                     </div>
                     <div class="user-avatar" style="background:#0284c7;">A</div>
+                    <button onclick="adminLogout()" class="btn btn-secondary btn-sm" style="color:#ef4444; border-color:rgba(239,68,68,0.4); background:rgba(239,68,68,0.08); padding:6px 12px;" title="ออกจากระบบ Admin">
+                        🚪 ออกจากระบบ
+                    </button>
                 </div>
             </div>
 

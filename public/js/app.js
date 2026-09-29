@@ -3,8 +3,9 @@
 // ====================================================================
 
 // Global State
-let currentUserId = parseInt(localStorage.getItem('ebook_user_id')) || 2;
-let currentUserName = localStorage.getItem('ebook_user_name') || 'นายธนวัฒน์ นามเหง้า';
+const isGuest = localStorage.getItem('ebook_is_guest') === 'true';
+let currentUserId = isGuest ? null : (parseInt(localStorage.getItem('ebook_user_id')) || 2);
+let currentUserName = isGuest ? '' : (localStorage.getItem('ebook_user_name') || 'นายธนวัฒน์ นามเหง้า');
 let selectedCategory = 'all';
 let searchQuery = '';
 let currentSort = 'newest';
@@ -27,7 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Helper for API fetch with User context
 async function apiFetch(url, options = {}) {
     const headers = options.headers || {};
-    headers['x-user-id'] = currentUserId;
+    if (currentUserId) {
+        headers['x-user-id'] = currentUserId;
+    }
     options.headers = headers;
     const response = await fetch(url, options);
     return response;
@@ -57,10 +60,12 @@ function toggleUserDropdown() {
 }
 
 function switchUser(userId, fullName, username) {
+    localStorage.removeItem('ebook_is_guest');
     currentUserId = userId;
     currentUserName = fullName;
     localStorage.setItem('ebook_user_id', userId);
     localStorage.setItem('ebook_user_name', fullName);
+    localStorage.setItem('ebook_user_role', userId === 1 ? 'admin' : 'customer');
     updateUserBadgeDisplay();
     toggleUserDropdown();
     fetchCart();
@@ -71,10 +76,46 @@ function switchUser(userId, fullName, username) {
 }
 
 function updateUserBadgeDisplay() {
-    document.getElementById('nav-username').textContent = currentUserName;
-    document.getElementById('nav-avatar').textContent = currentUserName.charAt(0);
+    const navUsername = document.getElementById('nav-username');
+    const navAvatar = document.getElementById('nav-avatar');
     const orderModalUser = document.getElementById('orders-user-name');
-    if (orderModalUser) orderModalUser.textContent = currentUserName;
+    const logoutBtn = document.getElementById('btn-dropdown-logout');
+    const profileBtn = document.getElementById('btn-profile-edit-btn');
+
+    if (currentUserId && currentUserName) {
+        if (navUsername) navUsername.textContent = currentUserName;
+        if (navAvatar) navAvatar.textContent = currentUserName.charAt(0);
+        if (orderModalUser) orderModalUser.textContent = currentUserName;
+        if (logoutBtn) logoutBtn.style.display = 'flex';
+        if (profileBtn) profileBtn.style.display = 'flex';
+    } else {
+        if (navUsername) navUsername.textContent = 'เข้าสู่ระบบ / สมัคร';
+        if (navAvatar) navAvatar.textContent = '👤';
+        if (orderModalUser) orderModalUser.textContent = 'ผู้เยี่ยมชม (ยังไม่ได้เข้าสู่ระบบ)';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (profileBtn) profileBtn.style.display = 'none';
+    }
+}
+
+async function logoutUser() {
+    if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (e) {}
+        localStorage.removeItem('ebook_user_id');
+        localStorage.removeItem('ebook_user_name');
+        localStorage.removeItem('ebook_user_role');
+        localStorage.setItem('ebook_is_guest', 'true');
+        currentUserId = null;
+        currentUserName = '';
+        updateUserBadgeDisplay();
+        const drop = document.getElementById('user-dropdown');
+        if (drop) drop.style.display = 'none';
+        showToast('ออกจากระบบเรียบร้อยแล้ว กำลังนำท่านไปหน้าระบบสมาชิก...', 'info');
+        setTimeout(() => {
+            window.location.href = '/auth.html?tab=login';
+        }, 800);
+    }
 }
 
 // Close dropdown on outside click
@@ -375,6 +416,13 @@ async function fetchCart() {
 
 async function addToCart(ebookId, event) {
     if (event) event.stopPropagation();
+    if (!currentUserId) {
+        showToast('กรุณาเข้าสู่ระบบก่อนเลือกซื้อหนังสือ', 'info');
+        setTimeout(() => {
+            window.location.href = '/auth.html?tab=login';
+        }, 800);
+        return;
+    }
     try {
         const res = await apiFetch('/api/cart/items', {
             method: 'POST',
@@ -565,6 +613,13 @@ async function submitOrderAndPayment() {
 // ====================================================================
 
 function openOrdersModal() {
+    if (!currentUserId) {
+        showToast('กรุณาเข้าสู่ระบบก่อนดูประวัติคำสั่งซื้อ', 'info');
+        setTimeout(() => {
+            window.location.href = '/auth.html?tab=login';
+        }, 800);
+        return;
+    }
     const modal = document.getElementById('orders-modal');
     modal.classList.add('active');
     loadMyOrders();

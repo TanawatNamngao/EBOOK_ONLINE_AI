@@ -43,6 +43,20 @@ function showToast(message, type = 'success') {
     }, 3500);
 }
 
+// Admin Logout
+async function adminLogout() {
+    if (confirm('คุณต้องการออกจากระบบผู้ดูแล (Admin) ใช่หรือไม่?')) {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (e) {}
+        localStorage.removeItem('ebook_user_id');
+        localStorage.removeItem('ebook_user_name');
+        localStorage.removeItem('ebook_user_role');
+        localStorage.setItem('ebook_is_guest', 'true');
+        window.location.href = '/auth.html?tab=login';
+    }
+}
+
 // Switch Sidebar Tabs
 function switchAdminTab(tabName) {
     document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.remove('active'));

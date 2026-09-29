@@ -375,13 +375,16 @@
         </p>
 
         <!-- Current Login Banner (if already logged in) -->
-        <div id="current-user-banner" class="logged-banner" style="display: none; width: 100%; max-width: 540px; box-sizing: border-box;">
+        <div id="current-user-banner" class="logged-banner" style="display: none; width: 100%; max-width: 540px; box-sizing: border-box; justify-content: space-between; align-items: center;">
             <div>
                 <span style="color: #10b981; font-weight: bold;">✓ กำลังใช้งานในชื่อ:</span> 
                 <span id="banner-user-name" style="font-weight: 600;"></span>
                 <span id="banner-user-role" style="font-size: 0.75rem; background: rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 4px; margin-left: 6px;"></span>
             </div>
-            <a href="/" class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 0.8rem;">ไปที่หน้าร้าน</a>
+            <div style="display: flex; gap: 8px;">
+                <a href="/" class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 0.8rem;">ไปที่หน้าร้าน</a>
+                <button onclick="handleLogout()" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.8rem; color: #ef4444; border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08);">🚪 ออกจากระบบ</button>
+            </div>
         </div>
 
         <!-- Auth Card -->
@@ -533,7 +536,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const savedName = localStorage.getItem('ebook_user_name');
             const savedRole = localStorage.getItem('ebook_user_role');
-            if (savedName) {
+            const isGuest = localStorage.getItem('ebook_is_guest') === 'true';
+            if (savedName && !isGuest) {
                 const banner = document.getElementById('current-user-banner');
                 banner.style.display = 'flex';
                 document.getElementById('banner-user-name').textContent = savedName;
@@ -673,6 +677,7 @@
                 showToast('สร้างบัญชีสำเร็จ! กำลังเข้าสู่ระบบ...', 'success');
 
                 // Save to localStorage
+                localStorage.removeItem('ebook_is_guest');
                 localStorage.setItem('ebook_user_id', data.user.user_id);
                 localStorage.setItem('ebook_user_name', data.user.full_name);
                 localStorage.setItem('ebook_user_role', data.user.role_name || 'customer');
@@ -726,6 +731,7 @@
                 showToast(`ยินดีต้อนรับคุณ ${data.user.full_name}!`, 'success');
 
                 // Save to localStorage
+                localStorage.removeItem('ebook_is_guest');
                 localStorage.setItem('ebook_user_id', data.user.user_id);
                 localStorage.setItem('ebook_user_name', data.user.full_name);
                 localStorage.setItem('ebook_user_role', data.user.role_name || 'customer');
@@ -742,6 +748,21 @@
                 showToast(err.message, 'error');
                 btn.disabled = false;
                 btn.innerHTML = '<span>➡️</span> เข้าสู่ระบบ';
+            }
+        }
+
+        // Logout
+        async function handleLogout() {
+            if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+                try {
+                    await fetch('/api/auth/logout', { method: 'POST' });
+                } catch (e) {}
+                localStorage.removeItem('ebook_user_id');
+                localStorage.removeItem('ebook_user_name');
+                localStorage.removeItem('ebook_user_role');
+                localStorage.setItem('ebook_is_guest', 'true');
+                document.getElementById('current-user-banner').style.display = 'none';
+                showToast('ออกจากระบบเรียบร้อยแล้ว', 'info');
             }
         }
     </script>
