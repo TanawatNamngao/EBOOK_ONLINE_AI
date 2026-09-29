@@ -73,7 +73,7 @@ async function runTests() {
             SELECT dl.token, o.status 
             FROM download_links dl 
             JOIN orders o ON dl.order_id = o.order_id 
-            WHERE o.status = 'confirmed' 
+            WHERE o.status = 'confirmed' AND dl.download_count < dl.max_downloads
             LIMIT 1
         `).get();
         const resDownload = await fetch(`http://localhost:3000/api/download/${confirmedDownload.token}`);
