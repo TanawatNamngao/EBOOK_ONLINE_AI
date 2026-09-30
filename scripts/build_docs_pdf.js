@@ -13,7 +13,8 @@ const filesToConvert = [
     '02_AI_USAGE_LOG.md',
     '03_SYSTEM_FLOW_AND_SCENARIOS.md',
     '04_TEST_CASES.md',
-    '05_ANALYTICS_REPORTS.md'
+    '05_ANALYTICS_REPORTS.md',
+    'PRESENTATION_SLIDES.md'
 ];
 
 const cssTemplate = `

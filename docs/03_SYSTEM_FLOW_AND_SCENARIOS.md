@@ -118,21 +118,21 @@ stateDiagram-v2
 4. **พฤติกรรมลูกค้า:** ลูกค้าที่มียอดซื้อสะสมสูงสุด (Top Spenders) และสัดส่วนสถานะออเดอร์ (สำเร็จ vs รอตรวจ vs ยกเลิก)
 
 <div align="center">
-<img src="รูปภาพประกอบรายงาน/Screenshot (334).png" alt="หน้าร้านแคตตาล็อก" width="92%">
-<br><em>ภาพประกอบที่ 1: หน้าต่างแคตตาล็อกหนังสือและการค้นหา E-Book หน้าร้าน</em>
+<img src="รูปภาพประกอบรายงาน/Screenshot (373).png" alt="หน้าร้านแคตตาล็อก" width="92%">
+<br><em>ภาพประกอบที่ 1: หน้าต่างแคตตาล็อกหนังสือและการค้นหา E-Book หน้าร้าน (Storefront Catalog)</em>
 </div>
 
 <div align="center">
-<img src="รูปภาพประกอบรายงาน/Screenshot (337).png" alt="ตะกร้าสินค้า" width="92%">
-<br><em>ภาพประกอบที่ 2: หน้าต่างตะกร้าสินค้าและการคำนวณราคาสุทธิแบบ Real-Time</em>
+<img src="รูปภาพประกอบรายงาน/Screenshot (374).png" alt="ตะกร้าสินค้า" width="92%">
+<br><em>ภาพประกอบที่ 2: หน้าต่างตะกร้าสินค้าและการคำนวณราคาสุทธิแบบ Real-Time (Shopping Cart Drawer)</em>
 </div>
 
 <div align="center">
-<img src="รูปภาพประกอบรายงาน/Screenshot (338).png" alt="หน้าต่างชำระเงิน" width="92%">
-<br><em>ภาพประกอบที่ 3: หน้าต่างยืนยันการสั่งซื้อและชำระเงินจำลองผ่าน PromptPay QR และแนบสลิป</em>
+<img src="รูปภาพประกอบรายงาน/Screenshot (375).png" alt="ประวัติคำสั่งซื้อและการดาวน์โหลด" width="92%">
+<br><em>ภาพประกอบที่ 3: หน้าต่างประวัติคำสั่งซื้อ การควบคุมสิทธิ์ และปุ่มดาวน์โหลด E-Book ปลอดภัย</em>
 </div>
 
 <div align="center">
-<img src="รูปภาพประกอบรายงาน/Screenshot (339).png" alt="Admin Dashboard" width="92%">
+<img src="รูปภาพประกอบรายงาน/Screenshot (376).png" alt="Admin Dashboard" width="92%">
 <br><em>ภาพประกอบที่ 4: แผงควบคุมหลักผู้ดูแลระบบ (Admin Dashboard) และสรุปยอดขายสดจากฐานข้อมูล</em>
 </div>
