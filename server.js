@@ -6,6 +6,7 @@ const multer = require('multer');
 const crypto = require('crypto');
 const db = require('./database/db');
 const supabaseSync = require('./database/supabase');
+const { createSlipFileForOrder, generateSlipSvg } = require('./utils/slipGenerator');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -562,6 +563,23 @@ app.post('/api/orders/checkout', (req, res) => {
     }
 });
 
+// Dynamic Slip Preview API (for live preview in checkout modal)
+app.get('/api/slips/preview', (req, res) => {
+    try {
+        const { amount, name, order_number, method } = req.query;
+        const svg = generateSlipSvg({
+            amount: parseFloat(amount) || 0,
+            customerName: name || 'ลูกค้าผู้มีอุปการคุณ',
+            orderNumber: order_number || 'PREVIEW',
+            bankThemeKey: method === 'bank_transfer' ? 'KBANK' : 'PROMPTPAY'
+        });
+        res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+        res.send(svg);
+    } catch (err) {
+        res.status(500).send('Error generating slip preview');
+    }
+});
+
 // Submit Mock Payment & Slip
 app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) => {
     try {
@@ -569,19 +587,29 @@ app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) 
         const { payment_method, note } = req.body;
         let slipUrl = null;
 
-        if (req.file) {
-            slipUrl = `/assets/slips/${req.file.filename}`;
-        } else if (req.body.slip_mock_url) {
-            slipUrl = req.body.slip_mock_url;
-        } else {
-            slipUrl = '/assets/slips/slip_mock_01.png'; // default mock slip
-        }
-
-        const order = db.prepare('SELECT order_id, total_amount, status FROM orders WHERE order_id = ?').get(orderId);
+        const order = db.prepare(`
+            SELECT o.order_id, o.order_number, o.total_amount, o.status, u.full_name, u.username 
+            FROM orders o 
+            JOIN users u ON o.user_id = u.user_id 
+            WHERE o.order_id = ?
+        `).get(orderId);
         if (!order) return res.status(404).json({ error: 'ไม่พบคำสั่งซื้อ' });
 
         if (order.status === 'confirmed') {
             return res.status(400).json({ error: 'คำสั่งซื้อนี้ได้รับการยืนยันเรียบร้อยแล้ว' });
+        }
+
+        if (req.file) {
+            slipUrl = `/assets/slips/${req.file.filename}`;
+        } else {
+            // Generate customized dynamic SVG slip matching the EXACT order total amount & customer name!
+            slipUrl = createSlipFileForOrder({
+                orderId: order.order_id,
+                orderNumber: order.order_number,
+                customerName: order.full_name || order.username || 'ลูกค้า EBOOK_ONLINE',
+                totalAmount: order.total_amount,
+                paymentMethod: payment_method || 'promptpay_qr'
+            });
         }
 
         db.prepare(`
@@ -835,8 +863,8 @@ app.put('/api/admin/orders/:id/status', (req, res) => {
     try {
         updateStatusTransaction();
 
-        // Realtime sync to Supabase Cloud
-        try { supabaseSync.syncOrderStatusToSupabase(orderId, status); } catch (e) {}
+        // Realtime sync to Supabase Cloud (including identical download links from SQLite)
+        try { supabaseSync.syncOrderStatusToSupabase(orderId, status, db); } catch (e) {}
 
         res.json({ message: `ปรับสถานะคำสั่งซื้อเป็น "${status}" เรียบร้อยแล้ว` });
     } catch (err) {

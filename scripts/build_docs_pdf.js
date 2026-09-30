@@ -126,13 +126,16 @@ code {
 pre {
     background-color: #0f172a;
     color: #f8fafc;
-    padding: 14px 16px;
+    padding: 12px 14px;
     border-radius: 8px;
-    overflow-x: auto;
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
     font-family: 'Fira Code', 'Consolas', monospace;
-    font-size: 9pt;
-    line-height: 1.5;
-    margin: 14px 0;
+    font-size: 8.5pt;
+    line-height: 1.45;
+    margin: 12px 0;
     page-break-inside: avoid;
 }
 
@@ -141,6 +144,8 @@ pre code {
     color: inherit;
     padding: 0;
     border: none;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
 }
 
 blockquote {

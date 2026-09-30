@@ -118,13 +118,42 @@ async function syncPaymentToSupabase(payment) {
 }
 
 // Helper: Sync order status update (e.g. admin approval)
-async function syncOrderStatusToSupabase(orderId, status) {
+async function syncOrderStatusToSupabase(orderId, status, sqliteDb = null) {
     try {
         await pool.query(`UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE order_id = $2;`, [status, orderId]);
         if (status === 'confirmed') {
             await pool.query(`UPDATE payments SET payment_status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE order_id = $1;`, [orderId]);
+
+            // Sync download links from SQLite if available, or generate directly on Supabase
+            if (sqliteDb) {
+                const links = sqliteDb.prepare('SELECT * FROM download_links WHERE order_id = ?').all(orderId);
+                for (const l of links) {
+                    await pool.query(`
+                        INSERT INTO download_links (order_id, ebook_id, user_id, token, download_url, expires_at, download_count, max_downloads)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        ON CONFLICT (order_id, ebook_id) DO UPDATE SET token = EXCLUDED.token;
+                    `, [l.order_id, l.ebook_id, l.user_id, l.token, l.download_url, l.expires_at, l.download_count, l.max_downloads]);
+                }
+            } else {
+                const orderRes = await pool.query('SELECT user_id FROM orders WHERE order_id = $1;', [orderId]);
+                const itemsRes = await pool.query('SELECT ebook_id FROM order_items WHERE order_id = $1;', [orderId]);
+                if (orderRes.rows.length > 0 && itemsRes.rows.length > 0) {
+                    const userId = orderRes.rows[0].user_id;
+                    const crypto = require('crypto');
+                    for (const item of itemsRes.rows) {
+                        const token = 'tok_' + crypto.randomBytes(16).toString('hex');
+                        const downloadUrl = `/api/download/${token}`;
+                        const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+                        await pool.query(`
+                            INSERT INTO download_links (order_id, ebook_id, user_id, token, download_url, expires_at, download_count, max_downloads)
+                            VALUES ($1, $2, $3, $4, $5, $6, 0, 10)
+                            ON CONFLICT (order_id, ebook_id) DO UPDATE SET token = EXCLUDED.token;
+                        `, [orderId, item.ebook_id, userId, token, downloadUrl, expiresAt]);
+                    }
+                }
+            }
         }
-        console.log(`☁️  Synced order #${orderId} status "${status}" to Supabase!`);
+        console.log(`☁️  Synced order #${orderId} status "${status}" & download links to Supabase!`);
     } catch (err) {
         console.error('⚠️  Failed to sync status update to Supabase:', err.message);
     }
@@ -165,7 +194,17 @@ async function syncFromSupabaseToSQLite(sqliteDb) {
             insertOrder.run(o.order_id, o.order_number, o.user_id, o.total_amount, o.status, toSqliteDate(o.created_at), toSqliteDate(o.updated_at));
         }
 
-        // 3. Sync Payments
+        // 3. Sync Order Items
+        const remoteOrderItems = await pool.query('SELECT order_item_id, order_id, ebook_id, price_at_purchase FROM order_items ORDER BY order_item_id ASC');
+        const insertOrderItem = sqliteDb.prepare(`
+            INSERT OR REPLACE INTO order_items (order_item_id, order_id, ebook_id, price_at_purchase)
+            VALUES (?, ?, ?, ?)
+        `);
+        for (const item of remoteOrderItems.rows) {
+            insertOrderItem.run(item.order_item_id, item.order_id, item.ebook_id, item.price_at_purchase);
+        }
+
+        // 4. Sync Payments
         const remotePayments = await pool.query('SELECT payment_id, order_id, payment_method, payment_status, slip_image_url, amount, paid_at, verified_at, note FROM payments ORDER BY payment_id ASC');
         const insertPayment = sqliteDb.prepare(`
             INSERT OR REPLACE INTO payments (payment_id, order_id, payment_method, payment_status, slip_image_url, amount, paid_at, verified_at, note)
@@ -175,8 +214,18 @@ async function syncFromSupabaseToSQLite(sqliteDb) {
             insertPayment.run(p.payment_id, p.order_id, p.payment_method, p.payment_status, p.slip_image_url, p.amount, toSqliteDate(p.paid_at), toSqliteDate(p.verified_at), p.note);
         }
 
+        // 5. Sync Download Links
+        const remoteDownloadLinks = await pool.query('SELECT download_id, order_id, ebook_id, user_id, token, download_url, expires_at, download_count, max_downloads, created_at FROM download_links ORDER BY download_id ASC');
+        const insertDownloadLink = sqliteDb.prepare(`
+            INSERT OR REPLACE INTO download_links (download_id, order_id, ebook_id, user_id, token, download_url, expires_at, download_count, max_downloads, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const dl of remoteDownloadLinks.rows) {
+            insertDownloadLink.run(dl.download_id, dl.order_id, dl.ebook_id, dl.user_id, dl.token, dl.download_url, toSqliteDate(dl.expires_at), dl.download_count, dl.max_downloads, toSqliteDate(dl.created_at));
+        }
+
         sqliteDb.pragma('foreign_keys = ON');
-        console.log(`✅ Cloud Sync Complete: SQLite now has ${remoteUsers.rows.length} users, ${remoteOrders.rows.length} orders from Supabase!`);
+        console.log(`✅ Cloud Sync Complete: SQLite now has ${remoteUsers.rows.length} users, ${remoteOrders.rows.length} orders, ${remoteOrderItems.rows.length} items, and ${remoteDownloadLinks.rows.length} download links from Supabase!`);
     } catch (err) {
         sqliteDb.pragma('foreign_keys = ON');
         console.warn('⚠️  Could not sync from Supabase on startup:', err.message);

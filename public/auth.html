@@ -8,17 +8,6 @@
     <link rel="stylesheet" href="/css/style.css">
     <style>
         /* Auth Page Dedicated Styles */
-        body {
-            background-color: #0b0f17;
-            color: #f8fafc;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Sarabun', sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
         .auth-page-container {
             flex: 1;
             display: flex;
@@ -27,27 +16,34 @@
             justify-content: center;
             padding: 40px 20px 60px;
             max-width: 100%;
+            position: relative;
+            z-index: 1;
         }
 
         /* Top Avatar Circle */
         .auth-avatar-circle {
-            width: 72px;
-            height: 72px;
+            width: 76px;
+            height: 76px;
             border-radius: 50%;
-            background: rgba(30, 41, 59, 0.7);
-            border: 2px solid rgba(245, 158, 11, 0.45);
-            box-shadow: 0 0 25px rgba(245, 158, 11, 0.2);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.25) 0%, rgba(14, 165, 233, 0.25) 100%);
+            border: 2px solid #0ea5e9;
+            box-shadow: 0 0 35px rgba(14, 165, 233, 0.45), inset 0 0 15px rgba(56, 189, 248, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 20px;
+            transition: var(--transition);
+        }
+        .auth-avatar-circle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 45px rgba(14, 165, 233, 0.65), inset 0 0 20px rgba(56, 189, 248, 0.45);
         }
 
         .auth-avatar-circle svg {
-            width: 36px;
-            height: 36px;
+            width: 38px;
+            height: 38px;
             fill: none;
-            stroke: #f59e0b;
+            stroke: #38bdf8;
             stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
@@ -55,9 +51,10 @@
 
         /* Titles */
         .auth-heading {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 800;
-            color: #ffffff;
+            font-family: var(--font-heading);
+            color: var(--text-primary);
             margin: 0 0 8px;
             text-align: center;
             letter-spacing: -0.5px;
@@ -65,49 +62,51 @@
 
         .auth-subheading {
             font-size: 0.95rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
             margin: 0 0 32px;
             text-align: center;
-        }
-
-        .auth-subheading .db-tag {
-            color: #fbbf24;
-            font-weight: 600;
         }
 
         /* Main Card */
         .auth-card {
             width: 100%;
             max-width: 540px;
-            background: #111827;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 32px 36px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 34px 38px;
+            box-shadow: var(--shadow-lg), 0 0 50px rgba(14, 165, 233, 0.12);
             box-sizing: border-box;
+            transition: var(--transition);
+        }
+        .auth-card:hover {
+            border-color: rgba(14, 165, 233, 0.4);
         }
 
         /* Tabs */
         .auth-tabs {
             display: flex;
-            background: #1f2937;
-            border-radius: 10px;
-            padding: 4px;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 5px;
             margin-bottom: 24px;
-            gap: 4px;
+            gap: 6px;
         }
 
         .auth-tab-btn {
             flex: 1;
-            padding: 10px 14px;
+            padding: 11px 14px;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             background: transparent;
-            color: #94a3b8;
+            color: var(--text-secondary);
+            font-family: var(--font-body);
             font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -115,21 +114,21 @@
         }
 
         .auth-tab-btn.active {
-            background: #f59e0b;
-            color: #111827;
+            background: linear-gradient(135deg, #2563eb 0%, #0284c7 100%) !important;
+            color: #ffffff !important;
             font-weight: 700;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.45) !important;
         }
 
         .auth-tab-btn:not(.active):hover {
-            color: #f8fafc;
-            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            background: rgba(14, 165, 233, 0.08);
         }
 
         /* Section Intro */
         .auth-section-title {
             font-size: 0.95rem;
-            color: #f59e0b;
+            color: #38bdf8 !important;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
@@ -151,29 +150,31 @@
         }
 
         .auth-label .required {
-            color: #f59e0b;
+            color: #38bdf8;
         }
 
         .auth-input {
             width: 100%;
-            padding: 13px 16px;
-            background: #0f172a;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 8px;
+            padding: 12px 16px;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
             color: #ffffff;
+            font-family: var(--font-body);
             font-size: 0.95rem;
             box-sizing: border-box;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: var(--transition);
         }
 
         .auth-input:focus {
             outline: none;
-            border-color: #f59e0b;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+            border-color: #0ea5e9 !important;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25) !important;
+            background: rgba(26, 34, 52, 0.95);
         }
 
         .auth-input::placeholder {
-            color: #64748b;
+            color: var(--text-muted);
             font-size: 0.9rem;
         }
 
@@ -196,33 +197,36 @@
         /* Submit Button */
         .auth-btn-submit {
             width: 100%;
-            padding: 14px;
-            background: #f59e0b;
-            color: #111827;
+            padding: 13px;
+            background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%) !important;
+            color: #ffffff !important;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-heading);
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: var(--transition);
             margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+            box-shadow: 0 4px 18px rgba(37, 99, 235, 0.45) !important;
         }
 
         .auth-btn-submit:hover {
-            background: #d97706;
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%) !important;
+            box-shadow: 0 10px 28px -4px rgba(14, 165, 233, 0.6) !important;
+            filter: brightness(1.08);
         }
 
         .auth-btn-submit:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         /* Switch text footer */
@@ -230,31 +234,53 @@
             text-align: center;
             margin-top: 20px;
             font-size: 0.88rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
         }
 
         .auth-footer-link {
-            color: #f59e0b;
+            color: #38bdf8;
             cursor: pointer;
             font-weight: 600;
             text-decoration: underline;
             margin-left: 4px;
+            transition: var(--transition);
         }
 
         .auth-footer-link:hover {
-            color: #fbbf24;
+            color: #7dd3fc;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        /* Standards Guide Box */
+        .standards-guide-box {
+            margin-bottom: 18px;
+            padding: 14px 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(14, 165, 233, 0.35);
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .standards-guide-title {
+            font-weight: bold;
+            color: #38bdf8;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         /* Test Accounts Section */
         .test-accounts-box {
             margin-top: 28px;
             padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid var(--border);
         }
 
         .test-accounts-title {
             font-size: 0.82rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
             margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -271,51 +297,53 @@
         }
 
         .test-btn {
-            padding: 9px 14px;
-            background: #1e293b;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 6px;
-            color: #e2e8f0;
+            padding: 10px 14px;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: var(--font-body);
             font-size: 0.85rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            transition: all 0.2s;
+            transition: var(--transition);
             text-align: left;
         }
 
         .test-btn:hover {
-            background: #334155;
-            border-color: #f59e0b;
+            background: rgba(14, 165, 233, 0.12);
+            border-color: rgba(14, 165, 233, 0.45);
             color: #ffffff;
+            transform: translateY(-1px);
         }
 
         .test-btn .role-tag {
             font-size: 0.72rem;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 3px 8px;
+            border-radius: var(--radius-full);
             font-weight: 600;
         }
 
         .test-btn .role-tag.admin {
-            background: rgba(239, 68, 68, 0.2);
+            background: rgba(239, 68, 68, 0.15);
             color: #f87171;
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         .test-btn .role-tag.customer {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: rgba(14, 165, 233, 0.18);
+            color: #38bdf8;
+            border: 1px solid rgba(14, 165, 233, 0.35);
         }
 
         /* Current Logged In Banner */
         .logged-banner {
             background: rgba(16, 185, 129, 0.1);
             border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 8px;
-            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            padding: 12px 18px;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
@@ -343,7 +371,7 @@
             <nav class="nav-links" id="desktop-nav">
                 <a href="/#catalog" class="nav-link" id="nav-catalog-link">หนังสือทั้งหมด</a>
                 <a href="/#orders" class="nav-link" id="nav-orders-link">📋 คำสั่งซื้อของฉัน</a>
-                <a href="/auth.html" class="nav-link active" id="nav-auth-link" style="color: #fbbf24;">👤 ระบบสมาชิก</a>
+                <a href="/auth.html" class="nav-link active" id="nav-auth-link">👤 ระบบสมาชิก</a>
             </nav>
 
             <div class="nav-actions">
@@ -389,82 +417,16 @@
             
             <!-- Tabs -->
             <div class="auth-tabs">
-                <button class="auth-tab-btn active" id="tab-btn-register" onclick="switchAuthTab('register')">
-                    <span>👤+</span> สมัครสมาชิกใหม่ (Sign Up)
-                </button>
-                <button class="auth-tab-btn" id="tab-btn-login" onclick="switchAuthTab('login')">
+                <button class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">
                     <span>➡️</span> เข้าสู่ระบบ (Sign In)
+                </button>
+                <button class="auth-tab-btn" id="tab-btn-register" onclick="switchAuthTab('register')">
+                    <span>👤+</span> สมัครสมาชิกใหม่ (Sign Up)
                 </button>
             </div>
 
-            <!-- TAB 1: REGISTER FORM -->
-            <form id="form-register" onsubmit="handleRegisterSubmit(event)">
-                <div class="auth-section-title">
-                    <span>👤+</span> สร้างบัญชีสิทธิ์ลูกค้า (Customer) เพื่อสั่งซื้อ e-Book
-                </div>
-
-                <div class="auth-form-group">
-                    <label class="auth-label">
-                        <span>👤</span> ชื่อ-นามสกุล <span class="required">*</span>
-                    </label>
-                    <input type="text" id="reg-fullname" class="auth-input" placeholder="เช่น ธนวัฒน์ นามเหง้า" required>
-                </div>
-
-                <div class="auth-form-group">
-                    <label class="auth-label">
-                        <span>✉️</span> อีเมล (Email) <span class="required">*</span>
-                    </label>
-                    <input type="email" id="reg-email" class="auth-input" placeholder="youremail@gmail.com" required>
-                </div>
-
-                <div class="auth-form-group">
-                    <label class="auth-label">
-                        <span>📞</span> เบอร์โทรศัพท์ (ไม่บังคับ)
-                    </label>
-                    <input type="tel" id="reg-phone" class="auth-input" placeholder="081-999-8877">
-                </div>
-
-                <div class="auth-row-2col auth-form-group">
-                    <div>
-                        <label class="auth-label">
-                            <span>🔒</span> รหัสผ่าน (Password) <span class="required">*</span>
-                        </label>
-                        <input type="password" id="reg-password" class="auth-input" placeholder="อย่างน้อย 6 ตัวอักษร" minlength="6" oninput="validatePasswordInputs()" required>
-                    </div>
-                    <div>
-                        <label class="auth-label">
-                            <span>🔒</span> ยืนยันรหัสผ่าน <span class="required">*</span>
-                        </label>
-                        <input type="password" id="reg-password-confirm" class="auth-input" placeholder="ยืนยันรหัสผ่านอีกครั้ง" minlength="6" oninput="validatePasswordInputs()" required>
-                    </div>
-                </div>
-
-                <div id="password-feedback-msg" style="font-size:0.8rem; margin-top:-10px; margin-bottom:14px; min-height:18px;"></div>
-
-                <!-- Standards & Requirements Guide Box -->
-                <div class="standards-guide-box" style="margin-bottom: 18px; padding: 12px 14px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; font-size: 0.8rem; color: #94a3b8;">
-                    <div style="font-weight: bold; color: #fbbf24; margin-bottom: 6px; display:flex; align-items:center; gap:6px;">
-                        <span>🛡️</span> ข้อกำหนดมาตรฐานการกรอกข้อมูล (Validation Rules):
-                    </div>
-                    <ul style="margin: 0; padding-left: 18px; line-height: 1.55;">
-                        <li><strong style="color:#e2e8f0;">ชื่อ-นามสกุล:</strong> 3-100 ตัวอักษร (ห้ามมีตัวเลข, โค้ด HTML หรือสัญลักษณ์พิเศษ)</li>
-                        <li><strong style="color:#e2e8f0;">อีเมล:</strong> รูปแบบสากล (เช่น user@domain.com) และ<span style="color:#f87171;">ห้ามซ้ำ</span>กับในระบบ</li>
-                        <li><strong style="color:#e2e8f0;">เบอร์โทรศัพท์:</strong> ตัวเลข 9-10 หลัก ขึ้นต้นด้วย 0 (ถ้ากรอก)</li>
-                        <li><strong style="color:#e2e8f0;">รหัสผ่าน:</strong> อย่างน้อย 6 ตัวอักษรขึ้นไป และต้องตรงกันทั้ง 2 ช่อง</li>
-                    </ul>
-                </div>
-
-                <button type="submit" class="auth-btn-submit" id="btn-submit-reg">
-                    <span>👤+</span> สร้างบัญชีและเข้าสู่ระบบทันที
-                </button>
-
-                <div class="auth-footer-text">
-                    มีบัญชีอยู่แล้ว? <span class="auth-footer-link" onclick="switchAuthTab('login')">เข้าสู่ระบบที่นี่</span>
-                </div>
-            </form>
-
-            <!-- TAB 2: LOGIN FORM -->
-            <form id="form-login" onsubmit="handleLoginSubmit(event)" style="display: none;">
+            <!-- TAB 1: LOGIN FORM (DEFAULT) -->
+            <form id="form-login" onsubmit="handleLoginSubmit(event)">
                 <div class="auth-section-title">
                     <span>➡️</span> เข้าสู่ระบบเพื่อจัดการคำสั่งซื้อและดาวน์โหลด e-Book
                 </div>
@@ -522,6 +484,72 @@
                 </div>
             </form>
 
+            <!-- TAB 2: REGISTER FORM -->
+            <form id="form-register" onsubmit="handleRegisterSubmit(event)" style="display: none;">
+                <div class="auth-section-title">
+                    <span>👤+</span> สร้างบัญชีสิทธิ์ลูกค้า (Customer) เพื่อสั่งซื้อ e-Book
+                </div>
+
+                <div class="auth-form-group">
+                    <label class="auth-label">
+                        <span>👤</span> ชื่อ-นามสกุล <span class="required">*</span>
+                    </label>
+                    <input type="text" id="reg-fullname" class="auth-input" placeholder="เช่น ธนวัฒน์ นามเหง้า" required>
+                </div>
+
+                <div class="auth-form-group">
+                    <label class="auth-label">
+                        <span>✉️</span> อีเมล (Email) <span class="required">*</span>
+                    </label>
+                    <input type="email" id="reg-email" class="auth-input" placeholder="youremail@gmail.com" required>
+                </div>
+
+                <div class="auth-form-group">
+                    <label class="auth-label">
+                        <span>📞</span> เบอร์โทรศัพท์ (ไม่บังคับ)
+                    </label>
+                    <input type="tel" id="reg-phone" class="auth-input" placeholder="081-999-8877">
+                </div>
+
+                <div class="auth-row-2col auth-form-group">
+                    <div>
+                        <label class="auth-label">
+                            <span>🔒</span> รหัสผ่าน (Password) <span class="required">*</span>
+                        </label>
+                        <input type="password" id="reg-password" class="auth-input" placeholder="อย่างน้อย 6 ตัวอักษร" minlength="6" oninput="validatePasswordInputs()" required>
+                    </div>
+                    <div>
+                        <label class="auth-label">
+                            <span>🔒</span> ยืนยันรหัสผ่าน <span class="required">*</span>
+                        </label>
+                        <input type="password" id="reg-password-confirm" class="auth-input" placeholder="ยืนยันรหัสผ่านอีกครั้ง" minlength="6" oninput="validatePasswordInputs()" required>
+                    </div>
+                </div>
+
+                <div id="password-feedback-msg" style="font-size:0.8rem; margin-top:-10px; margin-bottom:14px; min-height:18px;"></div>
+
+                <!-- Standards & Requirements Guide Box -->
+                <div class="standards-guide-box">
+                    <div class="standards-guide-title">
+                        <span>🛡️</span> ข้อกำหนดมาตรฐานการกรอกข้อมูล (Validation Rules):
+                    </div>
+                    <ul style="margin: 0; padding-left: 18px; line-height: 1.55;">
+                        <li><strong style="color:#e2e8f0;">ชื่อ-นามสกุล:</strong> 3-100 ตัวอักษร (ห้ามมีตัวเลข, โค้ด HTML หรือสัญลักษณ์พิเศษ)</li>
+                        <li><strong style="color:#e2e8f0;">อีเมล:</strong> รูปแบบสากล (เช่น user@domain.com) และ<span style="color:#f87171;">ห้ามซ้ำ</span>กับในระบบ</li>
+                        <li><strong style="color:#e2e8f0;">เบอร์โทรศัพท์:</strong> ตัวเลข 9-10 หลัก ขึ้นต้นด้วย 0 (ถ้ากรอก)</li>
+                        <li><strong style="color:#e2e8f0;">รหัสผ่าน:</strong> อย่างน้อย 6 ตัวอักษรขึ้นไป และต้องตรงกันทั้ง 2 ช่อง</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="auth-btn-submit" id="btn-submit-reg">
+                    <span>👤+</span> สร้างบัญชีและเข้าสู่ระบบทันที
+                </button>
+
+                <div class="auth-footer-text">
+                    มีบัญชีอยู่แล้ว? <span class="auth-footer-link" onclick="switchAuthTab('login')">เข้าสู่ระบบที่นี่</span>
+                </div>
+            </form>
+
         </div>
     </div>
 
@@ -530,20 +558,43 @@
 
     <script>
         // Check current session from LocalStorage
+        (function checkInitialAuth() {
+            const savedId = localStorage.getItem('ebook_user_id');
+            const isGuest = localStorage.getItem('ebook_is_guest') === 'true';
+            const params = new URLSearchParams(window.location.search);
+
+            // ถ้ามีบัญชีอยู่แล้ว และไม่ได้กด logout มา -> พาไปหน้าเลือกซื้อหนังสือ (หน้าร้าน) ทันที!
+            if (savedId && !isGuest && params.get('logout') !== 'true') {
+                window.location.replace('/');
+                return;
+            }
+        })();
+
         document.addEventListener('DOMContentLoaded', () => {
+            const savedId = localStorage.getItem('ebook_user_id');
             const savedName = localStorage.getItem('ebook_user_name');
             const savedRole = localStorage.getItem('ebook_user_role');
             const isGuest = localStorage.getItem('ebook_is_guest') === 'true';
-            if (savedName && !isGuest) {
-                const banner = document.getElementById('current-user-banner');
-                banner.style.display = 'flex';
-                document.getElementById('banner-user-name').textContent = savedName;
-                document.getElementById('banner-user-role').textContent = savedRole || 'Customer';
+            const params = new URLSearchParams(window.location.search);
+
+            // ถ้ามีบัญชีอยู่แล้ว และไม่ได้กด logout มา -> พาไปหน้าเลือกซื้อหนังสือ (หน้าร้าน) ทันที!
+            if (savedId && !isGuest && params.get('logout') !== 'true') {
+                window.location.replace('/');
+                return;
             }
 
-            // Check URL param ?tab=login
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('tab') === 'login') {
+            // ถ้ามีการกด logout มา ให้ล้าง session
+            if (params.get('logout') === 'true') {
+                localStorage.removeItem('ebook_user_id');
+                localStorage.removeItem('ebook_user_name');
+                localStorage.removeItem('ebook_user_role');
+                localStorage.removeItem('ebook_is_guest');
+            }
+
+            // สลับแท็บตาม URL param หรือให้ login เป็นค่าเริ่มต้น
+            if (params.get('tab') === 'register') {
+                switchAuthTab('register');
+            } else {
                 switchAuthTab('login');
             }
         });

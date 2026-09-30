@@ -4,8 +4,8 @@
 
 // Global State
 const isGuest = localStorage.getItem('ebook_is_guest') === 'true';
-let currentUserId = isGuest ? null : (parseInt(localStorage.getItem('ebook_user_id')) || 2);
-let currentUserName = isGuest ? '' : (localStorage.getItem('ebook_user_name') || 'นายธนวัฒน์ นามเหง้า');
+let currentUserId = isGuest ? null : (parseInt(localStorage.getItem('ebook_user_id')) || null);
+let currentUserName = isGuest ? '' : (localStorage.getItem('ebook_user_name') || '');
 let selectedCategory = 'all';
 let searchQuery = '';
 let currentSort = 'newest';
@@ -14,6 +14,10 @@ let currentCartData = { items: [], total_amount: 0 };
 
 // DOM Content Loaded
 document.addEventListener('DOMContentLoaded', () => {
+    if (!currentUserId || isGuest) {
+        window.location.replace('/auth.html?tab=login');
+        return;
+    }
     updateUserBadgeDisplay();
     fetchCategories();
     fetchEbooks();
@@ -113,7 +117,7 @@ async function logoutUser() {
         if (drop) drop.style.display = 'none';
         showToast('ออกจากระบบเรียบร้อยแล้ว กำลังนำท่านไปหน้าระบบสมาชิก...', 'info');
         setTimeout(() => {
-            window.location.href = '/auth.html?tab=login';
+            window.location.href = '/auth.html?tab=login&logout=true';
         }, 800);
     }
 }
@@ -506,21 +510,25 @@ function closeCheckoutModal() {
 }
 
 function usePrebuiltMockSlip() {
-    const slipNum = Math.floor(Math.random() * 9 + 1);
-    activeMockSlipUrl = `/assets/slips/slip_mock_0${slipNum}.png`;
+    const totalAmount = currentCartData.total_amount || 0;
+    const selectedMethod = document.querySelector('input[name="pay-method"]:checked')?.value || 'promptpay_qr';
+    
+    // Dynamic slip preview matching the EXACT cart total amount & user name
+    activeMockSlipUrl = `/api/slips/preview?amount=${encodeURIComponent(totalAmount)}&name=${encodeURIComponent(currentUserName || 'ลูกค้า EBOOK_ONLINE')}&method=${encodeURIComponent(selectedMethod)}`;
+    
     const status = document.getElementById('slip-preview-status');
     const container = document.getElementById('slip-preview-container');
     const previewImg = document.getElementById('checkout-slip-preview-img');
     
     if (status) {
         status.style.display = 'block';
-        status.innerHTML = `✓ แนบสลิปจำลองสำเร็จ (พร้อมเพย์/ธนาคาร)`;
+        status.innerHTML = `✓ สร้างสลิปจำลองตรงตามยอดชำระจริง (฿${parseFloat(totalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}) สำเร็จ`;
     }
     if (previewImg && container) {
         previewImg.src = activeMockSlipUrl;
         container.style.display = 'block';
     }
-    showToast('แนบหลักฐานสลิปจำลองเรียบร้อยแล้ว');
+    showToast(`แนบสลิปจำลองยอดเงิน ฿${parseFloat(totalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })} เรียบร้อย`);
 }
 
 // In-app Slip Viewer Modal

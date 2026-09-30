@@ -6,6 +6,16 @@
     <title>EBOOK_ONLINE - ร้านขายหนังสือดิจิทัลระบบฐานข้อมูล 2026</title>
     <meta name="description" content="ระบบร้านค้า E-Book ออนไลน์ Mini Project วิชา Database ประจำปี 2026 รองรับการสั่งซื้อ ชำระเงินจำลอง และดาวน์โหลดไฟล์ดิจิทัลที่ปลอดภัย">
     <link rel="stylesheet" href="/css/style.css">
+    <script>
+        // Guard: เมื่อกดเข้าลิ้งให้เข้าหน้าล้อคอินก่อนเสมอ แต่ถ้าสมัคร/ล็อกอินไว้แล้วก็อยู่หน้าเลือกซื้อสมุดได้เลย
+        (function() {
+            var userId = localStorage.getItem('ebook_user_id');
+            var isGuest = localStorage.getItem('ebook_is_guest') === 'true';
+            if (!userId || isGuest) {
+                window.location.replace('/auth.html?tab=login');
+            }
+        })();
+    </script>
 </head>
 <body>
 
@@ -20,7 +30,7 @@
             <nav class="nav-links" id="desktop-nav">
                 <a href="#catalog" class="nav-link active" id="nav-catalog-link">หน้าร้านหนังสือ</a>
                 <a href="#orders" class="nav-link" id="nav-orders-link" onclick="openOrdersModal()">ประวัติคำสั่งซื้อ</a>
-                <a href="/auth.html" class="nav-link" id="nav-auth-link" style="color: #fbbf24; font-weight:600;">👤 ระบบสมาชิก</a>
+                <a href="/auth.html" class="nav-link" id="nav-auth-link">👤 ระบบสมาชิก</a>
             </nav>
 
             <div class="nav-actions">
@@ -42,7 +52,7 @@
 
     <!-- User Switcher Dropdown Menu -->
     <div id="user-dropdown" style="display:none; position:fixed; top:70px; right:90px; background:var(--bg-surface-elevated); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px; z-index:150; box-shadow:var(--shadow-lg); width:250px;">
-        <a href="/auth.html" class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start; margin-bottom:10px; color:#fbbf24; border-color:rgba(245,158,11,0.4); background:rgba(245,158,11,0.08);">
+        <a href="/auth.html" class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start; margin-bottom:10px; color:var(--secondary); border-color:rgba(14,165,233,0.3); background:rgba(14,165,233,0.08);">
             👤 ระบบสมาชิก & สิทธิ์การใช้งาน
         </a>
         <button id="btn-profile-edit-btn" class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start; margin-bottom:10px; color:#38bdf8; border-color:rgba(56,189,248,0.4); background:rgba(56,189,248,0.08);" onclick="openProfileModal()">

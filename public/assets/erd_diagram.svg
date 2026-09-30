@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 880" width="1480" height="880" style="background:#0b1120; font-family:'Segoe UI', Sarabun, sans-serif;">
+  <defs>
+    <!-- Gradients & Glows -->
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="50%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <linearGradient id="tblGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#38bdf8"/>
+    </marker>
+  </defs>
+
+  <!-- Top Title Banner -->
+  <rect x="30" y="15" width="1420" height="55" rx="8" fill="url(#headerGrad)" />
+  <text x="740" y="40" fill="#ffffff" font-size="18" font-weight="bold" text-anchor="middle" letter-spacing="1">แผนภาพความสัมพันธ์ข้อมูล (Entity-Relationship Diagram : ERD)</text>
+  <text x="740" y="58" fill="#bae6fd" font-size="11.5" text-anchor="middle">ระบบร้านค้าหนังสือดิจิทัล EBOOK_ONLINE (Mini Project Database 2026 - 11 Relational Tables in 3NF)</text>
+
+  <!-- Connection Lines (Under Entities) -->
+  <g stroke="#38bdf8" stroke-width="1.8" fill="none" opacity="0.65">
+    <!-- 1. roles -> users (1:N) -->
+    <path d="M 165 200 L 165 250" marker-end="url(#arrow)" />
+    <!-- 2. users -> carts (1:1) -->
+    <path d="M 165 460 L 165 520" marker-end="url(#arrow)" />
+    <!-- 3. carts -> cart_items (1:N) -->
+    <path d="M 280 575 L 340 575" marker-end="url(#arrow)" />
+    <!-- 4. users -> orders (1:N) -->
+    <path d="M 280 350 L 340 350" marker-end="url(#arrow)" />
+    <!-- 5. orders -> payments (1:1) -->
+    <path d="M 460 250 L 460 200" marker-end="url(#arrow)" />
+    <!-- 6. orders -> order_items (1:N) -->
+    <path d="M 580 325 L 660 325" marker-end="url(#arrow)" />
+    <!-- 7. ebooks -> order_items (1:N) -->
+    <path d="M 970 325 L 900 325" marker-end="url(#arrow)" />
+    <!-- 8. orders -> download_links (1:N) -->
+    <path d="M 460 430 L 460 560 L 660 560" marker-end="url(#arrow)" />
+    <!-- 9. ebooks -> download_links (1:N) -->
+    <path d="M 1095 490 L 1095 590 L 920 590" marker-end="url(#arrow)" />
+    <!-- 10. ebooks -> cart_items (1:N) -->
+    <path d="M 1000 490 L 1000 660 L 590 660 L 590 630 L 580 630" marker-end="url(#arrow)" />
+    <!-- 11. categories -> ebooks (1:N) -->
+    <path d="M 1050 200 L 1050 250" marker-end="url(#arrow)" />
+    <!-- 12. authors -> ebooks (1:N) -->
+    <path d="M 1320 200 L 1320 330 L 1220 330" marker-end="url(#arrow)" />
+  </g>
+
+  <!-- ==================== COLUMN 1 (X = 50) ==================== -->
+
+  <!-- ENTITY 1: ROLES -->
+  <g transform="translate(50, 90)" filter="url(#shadow)">
+    <rect width="230" height="110" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 0 0 L 230 0 L 230 28 L 0 28 Z" fill="#0369a1" />
+    <text x="115" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">ROLES (บทบาทผู้ใช้)</text>
+    <text x="12" y="48" fill="#facc15" font-size="10.5" font-weight="bold">PK  role_id</text>
+    <text x="125" y="48" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="70" fill="#38bdf8" font-size="10.5">UK  role_name</text>
+    <text x="125" y="70" fill="#94a3b8" font-size="10.5">VARCHAR(50)</text>
+    <text x="12" y="92" fill="#cbd5e1" font-size="10.5">    description</text>
+    <text x="125" y="92" fill="#94a3b8" font-size="10.5">VARCHAR(255)</text>
+  </g>
+
+  <!-- ENTITY 2: USERS -->
+  <g transform="translate(50, 250)" filter="url(#shadow)">
+    <rect width="230" height="210" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 0 0 L 230 0 L 230 28 L 0 28 Z" fill="#0284c7" />
+    <text x="115" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">USERS (ผู้ใช้งาน)</text>
+    <text x="12" y="50" fill="#facc15" font-size="10.5" font-weight="bold">PK  user_id</text>
+    <text x="125" y="50" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="72" fill="#f43f5e" font-size="10.5">FK  role_id</text>
+    <text x="125" y="72" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="94" fill="#38bdf8" font-size="10.5">UK  username</text>
+    <text x="125" y="94" fill="#94a3b8" font-size="10.5">VARCHAR(50)</text>
+    <text x="12" y="116" fill="#38bdf8" font-size="10.5">UK  email</text>
+    <text x="125" y="116" fill="#94a3b8" font-size="10.5">VARCHAR(120)</text>
+    <text x="12" y="138" fill="#cbd5e1" font-size="10.5">    password_hash</text>
+    <text x="125" y="138" fill="#94a3b8" font-size="10.5">VARCHAR(255)</text>
+    <text x="12" y="160" fill="#cbd5e1" font-size="10.5">    full_name</text>
+    <text x="125" y="160" fill="#94a3b8" font-size="10.5">VARCHAR(100)</text>
+    <text x="12" y="182" fill="#cbd5e1" font-size="10.5">    phone</text>
+    <text x="125" y="182" fill="#94a3b8" font-size="10.5">VARCHAR(20)</text>
+    <text x="12" y="200" fill="#cbd5e1" font-size="10.5">    created_at</text>
+    <text x="125" y="200" fill="#94a3b8" font-size="10.5">DATETIME</text>
+  </g>
+
+  <!-- ENTITY 3: CARTS -->
+  <g transform="translate(50, 520)" filter="url(#shadow)">
+    <rect width="230" height="110" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 0 0 L 230 0 L 230 28 L 0 28 Z" fill="#0369a1" />
+    <text x="115" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">CARTS (ตะกร้า 1:1)</text>
+    <text x="12" y="50" fill="#facc15" font-size="10.5" font-weight="bold">PK  cart_id</text>
+    <text x="125" y="50" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="72" fill="#f43f5e" font-size="10.5">FK,UK user_id</text>
+    <text x="125" y="72" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="94" fill="#cbd5e1" font-size="10.5">    updated_at</text>
+    <text x="125" y="94" fill="#94a3b8" font-size="10.5">DATETIME</text>
+  </g>
+
+  <!-- ==================== COLUMN 2 (X = 340) ==================== -->
+
+  <!-- ENTITY 4: PAYMENTS -->
+  <g transform="translate(340, 90)" filter="url(#shadow)">
+    <rect width="240" height="110" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 0 0 L 240 0 L 240 28 L 0 28 Z" fill="#0369a1" />
+    <text x="120" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">PAYMENTS (การชำระเงิน)</text>
+    <text x="12" y="50" fill="#facc15" font-size="10.5" font-weight="bold">PK  payment_id</text>
+    <text x="135" y="50" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="72" fill="#f43f5e" font-size="10.5">FK,UK order_id</text>
+    <text x="135" y="72" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="94" fill="#cbd5e1" font-size="10.5">    amount / slip_url</text>
+    <text x="135" y="94" fill="#94a3b8" font-size="10.5">DECIMAL / STR</text>
+  </g>
+
+  <!-- ENTITY 5: ORDERS -->
+  <g transform="translate(340, 250)" filter="url(#shadow)">
+    <rect width="240" height="180" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 0 0 L 240 0 L 240 28 L 0 28 Z" fill="#0284c7" />
+    <text x="120" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">ORDERS (คำสั่งซื้อ)</text>
+    <text x="12" y="50" fill="#facc15" font-size="10.5" font-weight="bold">PK  order_id</text>
+    <text x="135" y="50" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="72" fill="#38bdf8" font-size="10.5">UK  order_number</text>
+    <text x="135" y="72" fill="#94a3b8" font-size="10.5">VARCHAR(40)</text>
+    <text x="12" y="94" fill="#f43f5e" font-size="10.5">FK  user_id</text>
+    <text x="135" y="94" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="116" fill="#34d399" font-size="10.5" font-weight="bold">    total_amount</text>
+    <text x="135" y="116" fill="#94a3b8" font-size="10.5">DECIMAL(10,2)</text>
+    <text x="12" y="138" fill="#cbd5e1" font-size="10.5">    status</text>
+    <text x="135" y="138" fill="#94a3b8" font-size="10.5">pending/conf</text>
+    <text x="12" y="160" fill="#cbd5e1" font-size="10.5">    created_at</text>
+    <text x="135" y="160" fill="#94a3b8" font-size="10.5">DATETIME</text>
+  </g>
+
+  <!-- ENTITY 6: CART_ITEMS (Separated clearly from download_links!) -->
+  <g transform="translate(340, 520)" filter="url(#shadow)">
+    <rect width="240" height="135" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 0 0 L 240 0 L 240 28 L 0 28 Z" fill="#0284c7" />
+    <text x="120" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">CART_ITEMS (สินค้าในตะกร้า)</text>
+    <text x="12" y="50" fill="#facc15" font-size="10.5" font-weight="bold">PK  cart_item_id</text>
+    <text x="135" y="50" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="72" fill="#f43f5e" font-size="10.5">FK  cart_id</text>
+    <text x="135" y="72" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="94" fill="#f43f5e" font-size="10.5">FK  ebook_id</text>
+    <text x="135" y="94" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="116" fill="#cbd5e1" font-size="10.5">    quantity (1)</text>
+    <text x="135" y="116" fill="#94a3b8" font-size="10.5">INTEGER</text>
+  </g>
+
+  <!-- ==================== COLUMN 3 (X = 660) ==================== -->
+
+  <!-- ENTITY 7: ORDER_ITEMS -->
+  <g transform="translate(660, 250)" filter="url(#shadow)">
+    <rect width="240" height="145" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 0 0 L 240 0 L 240 28 L 0 28 Z" fill="#0284c7" />
+    <text x="120" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">ORDER_ITEMS (รายการสั่งซื้อ)</text>
+    <text x="12" y="50" fill="#facc15" font-size="10.5" font-weight="bold">PK  order_item_id</text>
+    <text x="140" y="50" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="72" fill="#f43f5e" font-size="10.5">FK  order_id</text>
+    <text x="140" y="72" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="94" fill="#f43f5e" font-size="10.5">FK  ebook_id</text>
+    <text x="140" y="94" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="120" fill="#34d399" font-size="10.5" font-weight="bold">    price_at_purchase</text>
+    <text x="140" y="120" fill="#94a3b8" font-size="10.5">DECIMAL(10,2)</text>
+  </g>
+
+  <!-- ENTITY 8: DOWNLOAD_LINKS (Placed cleanly in Column 3 with NO overlap!) -->
+  <g transform="translate(660, 500)" filter="url(#shadow)">
+    <rect width="250" height="165" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 0 0 L 250 0 L 250 28 L 0 28 Z" fill="#0369a1" />
+    <text x="125" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">DOWNLOAD_LINKS (สิทธิ์ดาวน์โหลด)</text>
+    <text x="12" y="50" fill="#facc15" font-size="10.5" font-weight="bold">PK  download_id</text>
+    <text x="145" y="50" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="72" fill="#f43f5e" font-size="10.5">FK  order_id</text>
+    <text x="145" y="72" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="94" fill="#f43f5e" font-size="10.5">FK  ebook_id</text>
+    <text x="145" y="94" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="116" fill="#f43f5e" font-size="10.5">FK  user_id</text>
+    <text x="145" y="116" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="138" fill="#38bdf8" font-size="10.5">UK  token (Secure)</text>
+    <text x="145" y="138" fill="#94a3b8" font-size="10.5">VARCHAR(64)</text>
+  </g>
+
+  <!-- ==================== COLUMN 4 (X = 970 to 1420) ==================== -->
+
+  <!-- ENTITY 9: CATEGORIES -->
+  <g transform="translate(970, 90)" filter="url(#shadow)">
+    <rect width="220" height="110" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 0 0 L 220 0 L 220 28 L 0 28 Z" fill="#0369a1" />
+    <text x="110" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">CATEGORIES (หมวดหมู่)</text>
+    <text x="12" y="50" fill="#facc15" font-size="10.5" font-weight="bold">PK  category_id</text>
+    <text x="125" y="50" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="72" fill="#38bdf8" font-size="10.5">UK  name / slug</text>
+    <text x="125" y="72" fill="#94a3b8" font-size="10.5">VARCHAR(100)</text>
+    <text x="12" y="94" fill="#cbd5e1" font-size="10.5">    is_active</text>
+    <text x="125" y="94" fill="#94a3b8" font-size="10.5">INTEGER(1)</text>
+  </g>
+
+  <!-- ENTITY 10: AUTHORS -->
+  <g transform="translate(1220, 90)" filter="url(#shadow)">
+    <rect width="210" height="110" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 0 0 L 210 0 L 210 28 L 0 28 Z" fill="#0369a1" />
+    <text x="105" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">AUTHORS (นักเขียน)</text>
+    <text x="12" y="50" fill="#facc15" font-size="10.5" font-weight="bold">PK  author_id</text>
+    <text x="120" y="50" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="72" fill="#cbd5e1" font-size="10.5">    name</text>
+    <text x="120" y="72" fill="#94a3b8" font-size="10.5">VARCHAR(100)</text>
+    <text x="12" y="94" fill="#cbd5e1" font-size="10.5">    bio / email</text>
+    <text x="120" y="94" fill="#94a3b8" font-size="10.5">TEXT / STR</text>
+  </g>
+
+  <!-- ENTITY 11: EBOOKS -->
+  <g transform="translate(970, 250)" filter="url(#shadow)">
+    <rect width="250" height="240" rx="8" fill="url(#tblGrad)" stroke="#38bdf8" stroke-width="2" />
+    <path d="M 0 0 L 250 0 L 250 28 L 0 28 Z" fill="#0284c7" />
+    <text x="125" y="19" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">EBOOKS (หนังสืออิเล็กทรอนิกส์)</text>
+    <text x="12" y="50" fill="#facc15" font-size="10.5" font-weight="bold">PK  ebook_id</text>
+    <text x="140" y="50" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="72" fill="#f43f5e" font-size="10.5">FK  category_id</text>
+    <text x="140" y="72" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="94" fill="#f43f5e" font-size="10.5">FK  author_id</text>
+    <text x="140" y="94" fill="#94a3b8" font-size="10.5">INTEGER</text>
+    <text x="12" y="116" fill="#cbd5e1" font-size="10.5">    title</text>
+    <text x="140" y="116" fill="#94a3b8" font-size="10.5">VARCHAR(200)</text>
+    <text x="12" y="138" fill="#38bdf8" font-size="10.5">UK  isbn</text>
+    <text x="140" y="138" fill="#94a3b8" font-size="10.5">VARCHAR(30)</text>
+    <text x="12" y="160" fill="#34d399" font-size="10.5" font-weight="bold">    price</text>
+    <text x="140" y="160" fill="#94a3b8" font-size="10.5">DECIMAL(10,2)</text>
+    <text x="12" y="182" fill="#cbd5e1" font-size="10.5">    cover_image</text>
+    <text x="140" y="182" fill="#94a3b8" font-size="10.5">VARCHAR(255)</text>
+    <text x="12" y="204" fill="#cbd5e1" font-size="10.5">    sample/full_file</text>
+    <text x="140" y="204" fill="#94a3b8" font-size="10.5">PDF URLs</text>
+    <text x="12" y="224" fill="#cbd5e1" font-size="10.5">    is_published</text>
+    <text x="140" y="224" fill="#94a3b8" font-size="10.5">INTEGER(0,1)</text>
+  </g>
+
+  <!-- ==================== LEGEND BOX (BOTTOM) ==================== -->
+  <g transform="translate(30, 715)">
+    <rect width="1420" height="135" rx="8" fill="#1e293b" stroke="#334155" />
+    <text x="20" y="26" fill="#ffffff" font-size="12" font-weight="bold">คำอธิบายสัญลักษณ์ความสัมพันธ์ (Crow's Foot Notation &amp; Key Constraints):</text>
+    
+    <circle cx="35" cy="50" r="5" fill="#facc15" />
+    <text x="48" y="54" fill="#facc15" font-size="11" font-weight="bold">PK : Primary Key (คีย์หลัก)</text>
+    
+    <circle cx="260" cy="50" r="5" fill="#f43f5e" />
+    <text x="273" y="54" fill="#f43f5e" font-size="11" font-weight="bold">FK : Foreign Key (คีย์นอก เชื่อมตาราง)</text>
+    
+    <circle cx="560" cy="50" r="5" fill="#38bdf8" />
+    <text x="573" y="54" fill="#38bdf8" font-size="11" font-weight="bold">UK : Unique Key (ค่าห้ามซ้ำกัน)</text>
+    
+    <circle cx="810" cy="50" r="5" fill="#34d399" />
+    <text x="823" y="54" fill="#34d399" font-size="11" font-weight="bold">CHECK / AUTOINCREMENT</text>
+
+    <text x="20" y="80" fill="#cbd5e1" font-size="11" font-weight="bold">ความสัมพันธ์หลัก 11 ตาราง (Cardinality):</text>
+    <text x="20" y="102" fill="#94a3b8" font-size="10.5">• ROLES (1:N) USERS | USERS (1:1) CARTS | CARTS (1:N) CART_ITEMS | EBOOKS (1:N) CART_ITEMS | USERS (1:N) ORDERS</text>
+    <text x="20" y="120" fill="#94a3b8" font-size="10.5">• ORDERS (1:N) ORDER_ITEMS | EBOOKS (1:N) ORDER_ITEMS | ORDERS (1:1) PAYMENTS | ORDERS (1:N) DOWNLOAD_LINKS | CATEGORIES/AUTHORS (1:N) EBOOKS</text>
+  </g>
+</svg>

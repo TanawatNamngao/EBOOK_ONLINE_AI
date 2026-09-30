@@ -5,6 +5,11 @@
 
 ## 1. แผนภาพแสดงความสัมพันธ์ข้อมูล (Entity-Relationship Diagram: ERD)
 
+<img src="รูปภาพประกอบรายงาน/erd_diagram.svg" alt="แผนภาพความสัมพันธ์ข้อมูล (Entity-Relationship Diagram : ERD)" width="100%">
+*ภาพที่ 1 แผนภาพความสัมพันธ์ข้อมูลเชิงสัมพันธ์ (Entity-Relationship Diagram : ERD) ครอบคลุม 11 ตาราง*
+
+### โครงสร้างความสัมพันธ์เชิงตรรกะ (Crow's Foot Notation & Attributes)
+
 ```mermaid
 erDiagram
     ROLES ||--o{ USERS : "has"

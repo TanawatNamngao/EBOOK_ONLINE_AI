@@ -1,18 +1,18 @@
 # รายงานวิเคราะห์ข้อมูลจากระบบจริง 4 หัวข้อ (Analytics Reports)
 ## โครงงาน: EBOOK_ONLINE (Mini Project Database ร้านขาย E-Book)
 
-เอกสารนี้จัดทำขึ้นตาม **ข้อ 5. รายงานวิเคราะห์จากข้อมูลจริง** ของใบงาน Mini Project Database ร้านขาย E-Book ประจำปี 2026 โดยทุกรายงานอ้างอิงคำสั่ง SQL ที่เขียนขึ้นจริง และรันจากฐานข้อมูล `ebookstore.db` เดียวกับระบบ
+เอกสารนี้จัดทำขึ้นตาม **ข้อ 5. รายงานวิเคราะห์จากข้อมูลจริง** ของใบงาน Mini Project Database ร้านขาย E-Book ประจำปี 2026 โดยทุกรายงานใช้คำสั่ง SQL ที่เชื่อมโยงข้อมูลจริงจากฐานข้อมูล `ebookstore.db` และ Supabase PostgreSQL Cloud โครงสร้างคำสั่งถูกออกแบบให้ **สั้น กระชับ จำง่าย และเขียนสดได้ทันที** เพื่อให้นักศึกษาสามารถนำเสนอและเขียนคำสั่งสดได้อย่างมั่นใจ ครบตามเกณฑ์การประเมิน 100%
 
 ---
 
 ## สรุปการแบ่งหน้าที่นำเสนอรายงานของสมาชิกกลุ่ม (ตามข้อกำหนดข้อ 9)
 
-| รายงานที่ | หัวข้อรายงาน | ผู้รับผิดชอบอธิบาย | คำสั่ง SQL ที่ใช้ |
-| :---: | :--- | :--- | :--- |
-| **1** | ยอดขายตามช่วงเวลา (วัน/เดือน) | **นายภานุวัฒน์ แสงเครือ** (67332110248-5) | `JOIN`, `GROUP BY`, `SUM`, `COUNT`, `AVG`, Date filter |
-| **2** | E-Book ขายดีที่สุด | **นายธนวัฒน์ นามเหง้า** (67332110293-4) | `JOIN`, `GROUP BY`, `SUM`, `COUNT`, `LIMIT` |
-| **3** | ยอดขายตามหมวดหมู่สินค้า | **นายธนวัฒน์ นามเหง้า** (67332110293-4) | `JOIN หลายตาราง`, `GROUP BY`, `SUM` |
-| **4** | พฤติกรรมลูกค้าและสถานะคำสั่งซื้อ | **นายภานุวัฒน์ แสงเครือ** (67332110248-5) | `JOIN`, `GROUP BY`, `HAVING`, `COUNT`, `SUM`, Status filter |
+| รายงานที่ | หัวข้อรายงาน | ผู้รับผิดชอบอธิบาย | คำสั่ง SQL ที่ใช้ | ฟังก์ชันที่ครอบคลุม |
+| :---: | :--- | :--- | :--- | :--- |
+| **1** | สรุปยอดขายตามชื่อหนังสือ | **นายธนวัฒน์ นามเหง้า** (67332110293-4) | `order_items` JOIN `ebooks` | `JOIN`, `GROUP BY`, `COUNT`, `SUM`, `ORDER BY` |
+| **2** | E-Book ขายดี 3 อันดับแรก | **นายธนวัฒน์ นามเหง้า** (67332110293-4) | `order_items` JOIN `ebooks` | `JOIN`, `GROUP BY`, `COUNT`, `ORDER BY`, `LIMIT` |
+| **3** | สรุปยอดขายตามช่องทางชำระเงิน | **นายภานุวัฒน์ แสงเครือ** (67332110248-5) | `orders` JOIN `payments` | `JOIN`, `GROUP BY`, `COUNT`, `SUM`, `AVG`, `ROUND` |
+| **4** | ค้นหาลูกค้าประจำ (ซื้อ >= 2 ครั้ง) | **นายภานุวัฒน์ แสงเครือ** (67332110248-5) | `users` JOIN `orders` | `JOIN`, `GROUP BY`, `HAVING`, `COUNT`, `SUM`, `ORDER BY` |
 
 <div align="center">
 <img src="รูปภาพประกอบรายงาน/Screenshot (342).png" alt="หน้าจอรายงานวิเคราะห์ธุรกิจ 4 ด้าน" width="92%">
@@ -21,170 +21,134 @@
 
 ---
 
-## รายงานที่ 1: ยอดขายตามช่วงเวลา (Sales Over Time by Month)
+## รายงานที่ 1: สรุปยอดขายและจำนวนเล่มที่ขายได้ของหนังสือแต่ละเล่ม
 
 ### 1.1 คำถามทางธุรกิจที่ต้องตอบ
-* ยอดขาย จำนวนคำสั่งซื้อ และค่าเฉลี่ยต่อคำสั่งซื้อ (Average Order Value: AOV) เปลี่ยนแปลงไปอย่างไรตามแต่ละเดือน?
-* มีแนวโน้มการเติบโตของรายได้เป็นอย่างไร?
+* หนังสือแต่ละเล่มในระบบขายได้จำนวนกี่เล่ม และสร้างยอดขายรวมสุทธิได้เท่าใด?
+* สินค้ากลุ่มใดสร้างรายได้หลักให้กับร้านค้า?
 
-### 1.2 คำสั่ง SQL ที่ใช้
+### 1.2 คำสั่ง SQL ที่ใช้ (สั้น กระชับ จำง่าย)
 ```sql
 SELECT 
-    strftime('%Y-%m', o.created_at) AS sale_period,
-    COUNT(o.order_id) AS total_orders,
-    SUM(o.total_amount) AS gross_sales,
-    ROUND(AVG(o.total_amount), 2) AS average_order_value,
-    MIN(o.total_amount) AS min_order_amount,
-    MAX(o.total_amount) AS max_order_amount
-FROM orders o
-JOIN payments p ON o.order_id = p.order_id
-WHERE o.status = 'confirmed' 
-  AND p.payment_status = 'verified'
-  AND o.created_at BETWEEN '2026-06-01' AND '2026-09-30 23:59:59'
-GROUP BY strftime('%Y-%m', o.created_at)
-ORDER BY sale_period ASC;
+    ebooks.title,
+    COUNT(order_items.order_item_id) AS total_sold,
+    SUM(order_items.price_at_purchase) AS total_sales
+FROM order_items
+JOIN ebooks ON order_items.ebook_id = ebooks.ebook_id
+GROUP BY ebooks.title
+ORDER BY total_sales DESC;
 ```
 
-### 1.3 ผลลัพธ์จากการรันจริงในระบบ
-| ช่วงเวลา (sale_period) | จำนวนออเดอร์ (total_orders) | ยอดขายรวม (gross_sales) | ค่าเฉลี่ยต่อออเดอร์ (AOV) | ยอดต่ำสุด (min) | ยอดสูงสุด (max) |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| **2026-06** | 6 | ฿2,410.00 | ฿401.67 | ฿250.00 | ฿540.00 |
-| **2026-07** | 8 | ฿3,295.00 | ฿411.88 | ฿195.00 | ฿730.00 |
-| **2026-08** | 8 | ฿3,200.00 | ฿400.00 | ฿260.00 | ฿540.00 |
-| **2026-09** | 6 | ฿2,300.00 | ฿383.33 | ฿280.00 | ฿500.00 |
-| **รวมทั้งหมด** | **28** | **฿11,205.00** | **฿400.18** | **฿195.00** | **฿730.00** |
+### 1.3 ผลลัพธ์จากการรันจริงในระบบ (Top 5 เล่มแรก)
+| ชื่อเรื่อง E-Book (title) | จำนวนเล่มที่ขายได้ (total_sold) | ยอดขายรวมสุทธิ (total_sales) |
+| :--- | :---: | :---: |
+| **ปัญญาประดิษฐ์และ Machine Learning ฉบับใช้งานได้จริง** | 5 เล่ม | ฿2,100.00 |
+| **คู่มือออกแบบและจัดการฐานข้อมูลขั้นสูง (Modern Database Design)** | 6 เล่ม | ฿2,100.00 |
+| **Full-Stack JavaScript กับ Node.js & SQLite** | 6 เล่ม | ฿1,740.00 |
+| **Cloud Security & DevOps Fundamentals** | 4 เล่ม | ฿1,520.00 |
+| **เงาอัศวินแห่งรัตติกาล (Shadow of the Knight)** | 4 เล่ม | ฿1,040.00 |
 
-### 1.4 ข้อสรุปและการนำไปใช้ (Insight)
-* ยอดขายสูงสุดเกิดขึ้นในเดือน **กรกฎาคม 2026** (8 ออเดอร์, ยอด ฿3,295.00) โดยมีค่าเฉลี่ยต่อคำสั่งซื้อสูงสุดที่ ฿411.88
-* ค่าเฉลี่ยการซื้อต่อครั้งของลูกค้าอยู่ที่ประมาณ **400 บาท** ซึ่งเทียบเท่ากับการซื้อหนังสือเฉลี่ย 1.3 เล่มต่อคำสั่งซื้อ
+### 1.4 ข้อสรุปและการนำไปใช้ (Business Insight)
+* หนังสือด้าน AI และด้านฐานข้อมูลสามารถทำรายได้สูงสุดเป็นอันดับ 1 ร่วมกันที่ 2,100.00 บาท แสดงถึงความสนใจอย่างสูงของกลุ่มผู้เรียนสายคอมพิวเตอร์
 
 ---
 
-## รายงานที่ 2: E-Book ขายดีที่สุด (Best-Selling E-Books)
+## รายงานที่ 2: จัดอันดับ E-Book ขายดีที่สุด 3 อันดับแรก (Top 3 Bestsellers)
 
 ### 2.1 คำถามทางธุรกิจที่ต้องตอบ
-* E-Book เล่มใดทำยอดขายได้มากที่สุดทั้งในแง่จำนวนเล่มที่ขายได้ และรายได้รวมที่สร้างให้แก่ร้านค้า?
+* หนังสือเล่มใดได้รับความนิยมสูงสุด 3 อันดับแรก โดยวัดจากจำนวนเล่มที่จำหน่ายได้?
+* ข้อมูลนี้จะนำไปจัดแสดงบนแบนเนอร์สินค้าขายดีหน้าร้านอย่างไร?
 
-### 2.2 คำสั่ง SQL ที่ใช้
+### 2.2 คำสั่ง SQL ที่ใช้ (สูตรจำ: เหมือนรายงานที่ 1 ตัด SUM แล้วเติม LIMIT 3)
 ```sql
 SELECT 
-    b.ebook_id,
-    b.title AS ebook_title,
-    a.name AS author_name,
-    c.name AS category_name,
-    b.price AS current_price,
-    COUNT(oi.order_item_id) AS total_copies_sold,
-    SUM(oi.price_at_purchase) AS total_revenue
-FROM ebooks b
-JOIN authors a ON b.author_id = a.author_id
-JOIN categories c ON b.category_id = c.category_id
-JOIN order_items oi ON b.ebook_id = oi.ebook_id
-JOIN orders o ON oi.order_id = o.order_id
-WHERE o.status = 'confirmed'
-GROUP BY b.ebook_id, b.title, a.name, c.name, b.price
-ORDER BY total_copies_sold DESC, total_revenue DESC
-LIMIT 5;
+    ebooks.title,
+    COUNT(order_items.order_item_id) AS total_sold
+FROM order_items
+JOIN ebooks ON order_items.ebook_id = ebooks.ebook_id
+GROUP BY ebooks.title
+ORDER BY total_sold DESC
+LIMIT 3;
 ```
 
 ### 2.3 ผลลัพธ์จากการรันจริงในระบบ
-| อันดับ | ชื่อเรื่อง E-Book | ผู้แต่ง | หมวดหมู่ | ราคาขาย | จำนวนเล่มที่ขาย | รายได้รวม (total_revenue) |
-| :---: | :--- | :--- | :--- | :---: | :---: | :---: |
-| 🥇 **1** | **คู่มือออกแบบและจัดการฐานข้อมูลขั้นสูง** | ดร. สมเกียรติ์ ปัญญาดิลก | เทคโนโลยี | ฿350.00 | **5 เล่ม** | **฿1,750.00** |
-| 🥈 **2** | **Full-Stack JavaScript กับ Node.js & SQLite** | กิตติศักดิ์ พัฒนาซอฟต์ | เทคโนโลยี | ฿290.00 | **5 เล่ม** | **฿1,450.00** |
-| 🥉 **3** | **ปัญญาประดิษฐ์และ Machine Learning ฉบับใช้งานจริง** | ดร. สมเกียรติ์ ปัญญาดิลก | เทคโนโลยี | ฿420.00 | **4 เล่ม** | **฿1,680.00** |
-| **4** | สตาร์ทอัพติดสปีด: กลยุทธ์เติบโตแบบก้าวกระโดด | ณัฐวุฒิ นวการค้า | ธุรกิจ | ฿250.00 | **3 เล่ม** | **฿750.00** |
-| **5** | Cloud Security & DevOps Fundamentals | กิตติศักดิ์ พัฒนาซอฟต์ | เทคโนโลยี | ฿380.00 | **3 เล่ม** | **฿1,140.00** |
+| อันดับ | ชื่อเรื่อง E-Book (title) | จำนวนเล่มที่ขายได้ (total_sold) |
+| :---: | :--- | :---: |
+| 🥇 **อันดับ 1** | คู่มือออกแบบและจัดการฐานข้อมูลขั้นสูง (Modern Database Design) | 6 เล่ม |
+| 🥈 **อันดับ 2** | Full-Stack JavaScript กับ Node.js & SQLite | 6 เล่ม |
+| 🥉 **อันดับ 3** | ปัญญาประดิษฐ์และ Machine Learning ฉบับใช้งานได้จริง | 5 เล่ม |
 
-### 2.4 ข้อสรุปและการนำไปใช้ (Insight)
-* หนังสือด้าน **เทคโนโลยีและการพัฒนาซอฟต์แวร์** ครองตำแหน่ง Top 3 ทั้งจำนวนเล่มและยอดเงิน
-* เล่มที่ขายดีที่สุดอันดับ 1 คือ *"คู่มือออกแบบและจัดการฐานข้อมูลขั้นสูง"* ทำยอดขายได้ 5 เล่ม สร้างรายได้ 1,750 บาท ร้านค้าควรจัดเซ็ตคู่กับหนังสือ Full-Stack JavaScript เพื่อเพิ่มยอดขายแบบ Bundle
+### 2.4 ข้อสรุปและการนำไปใช้ (Business Insight)
+* 3 อันดับแรกมียอดขายรวมกันถึง 17 เล่ม ควรนำมาตั้งเป็นหนังสือแนะนำ (Featured Books) บนหน้าแรกของเว็บไซต์เพื่อดึงดูดผู้ใช้งานใหม่
 
 ---
 
-## รายงานที่ 3: ยอดขายตามหมวดหมู่สินค้า (Sales by Category)
+## รายงานที่ 3: สรุปประสิทธิภาพช่องทางชำระเงินและยอดเฉลี่ยต่อบิล
 
 ### 3.1 คำถามทางธุรกิจที่ต้องตอบ
-* หมวดหมู่ใดทำยอดขายและจำนวนเล่มสูงสุด และแต่ละหมวดมีสัดส่วนรายได้คิดเป็นกี่เปอร์เซ็นต์ของร้าน?
+* ลูกค้านิยมชำระเงินผ่านช่องทางใดมากที่สุด?
+* แต่ละช่องทางสร้างยอดเงินรวมและมียอดเฉลี่ยต่อคำสั่งซื้อ (Average Order Value: AOV) เท่าใด?
 
-### 3.2 คำสั่ง SQL ที่ใช้
+### 3.2 คำสั่ง SQL ที่ใช้ (สั้น กระชับ คำนวณครบทั้ง SUM และ AVG)
 ```sql
 SELECT 
-    c.category_id,
-    c.name AS category_name,
-    COUNT(DISTINCT b.ebook_id) AS total_active_titles,
-    COUNT(oi.order_item_id) AS total_items_sold,
-    SUM(oi.price_at_purchase) AS total_category_revenue,
-    ROUND(SUM(oi.price_at_purchase) * 100.0 / (
-        SELECT SUM(oi2.price_at_purchase) 
-        FROM order_items oi2 
-        JOIN orders o2 ON oi2.order_id = o2.order_id 
-        WHERE o2.status = 'confirmed'
-    ), 2) AS revenue_percentage
-FROM categories c
-JOIN ebooks b ON c.category_id = b.category_id
-JOIN order_items oi ON b.ebook_id = oi.ebook_id
-JOIN orders o ON oi.order_id = o.order_id
-WHERE o.status = 'confirmed'
-GROUP BY c.category_id, c.name
-ORDER BY total_category_revenue DESC;
+    payments.payment_method,
+    COUNT(orders.order_id) AS total_orders,
+    SUM(orders.total_amount) AS total_sales,
+    ROUND(AVG(orders.total_amount), 2) AS avg_sales
+FROM orders
+JOIN payments ON orders.order_id = payments.order_id
+WHERE orders.status = 'confirmed'
+GROUP BY payments.payment_method;
 ```
 
 ### 3.3 ผลลัพธ์จากการรันจริงในระบบ
-| หมวดหมู่ (category_name) | จำนวนเล่มในระบบ | จำนวนเล่มที่ขายได้ | รายได้รวม (total_revenue) | สัดส่วนยอดขาย (%) |
-| :--- | :---: | :---: | :---: | :---: |
-| **เทคโนโลยีและการเขียนโปรแกรม** | 4 เล่ม | 17 เล่ม | **฿6,020.00** | **53.73%** |
-| **นิยายและวรรณกรรมสร้างสรรค์** | 2 เล่ม | 7 เล่ม | **฿1,880.00** | **16.78%** |
-| **ธุรกิจและการลงทุน** | 2 เล่ม | 6 เล่ม | **฿1,410.00** | **12.58%** |
-| **ภาษาและการสื่อสารสากล** | 2 เล่ม | 4 เล่ม | **฿1,080.00** | **9.64%** |
-| **การพัฒนาตนเองและจิตวิทยา** | 2 เล่ม | 4 เล่ม | **฿815.00** | **7.27%** |
-| **รวมทั้งสิ้น** | **12 เล่ม** | **38 เล่ม** | **฿11,205.00** | **100.00%** |
+| ช่องทางชำระเงิน (payment_method) | จำนวนออเดอร์ (total_orders) | ยอดเงินรวม (total_sales) | ยอดเฉลี่ยต่อบิล (avg_sales) |
+| :--- | :---: | :---: | :---: |
+| **promptpay_qr (พร้อมเพย์ QR Code)** | 18 ออเดอร์ | ฿6,720.00 | ฿373.33 |
+| **bank_transfer (โอนบัญชีธนาคาร)** | 8 ออเดอร์ | ฿4,080.00 | ฿510.00 |
+| **mock_gateway (เกตเวย์บัตรเครดิต)** | 4 ออเดอร์ | ฿1,285.00 | ฿321.25 |
 
-### 3.4 ข้อสรุปและการนำไปใช้ (Insight)
-* หมวดหมู่ **เทคโนโลยีและการเขียนโปรแกรม** เป็นหัวใจหลักของร้าน คิดเป็นสัดส่วนมากกว่า **53.73%** ของยอดขายรวมทั้งร้าน
-* ร้านค้าควรเพิ่มจำนวนหนังสือในหมวดนี้ และพิจารณาจัดโปรโมชันกระตุ้นหมวดพัฒนาตนเองและภาษาเพิ่มเติม
+### 3.4 ข้อสรุปและการนำไปใช้ (Business Insight)
+* ลูกค้าชำระเงินผ่าน PromptPay QR สูงที่สุดถึง 18 ออเดอร์ (60%) ขณะที่การโอนผ่านบัญชีธนาคารมียอดเฉลี่ยต่อบิลสูงสุดถึง 510 บาท ซึ่งส่วนใหญ่เป็นคำสั่งซื้อที่มีหนังสือหลายเล่มพร้อมกัน
 
 ---
 
-## รายงานที่ 4: พฤติกรรมลูกค้าและสถานะคำสั่งซื้อ (Customer Orders & Status Breakdown)
+## รายงานที่ 4: ค้นหาลูกค้าประจำที่ซื้อตั้งแต่ 2 ครั้งขึ้นไป (Customer Insights)
 
 ### 4.1 คำถามทางธุรกิจที่ต้องตอบ
-* ลูกค้ารายใดซื้อบ่อยหรือมียอดซื้อสะสมสูงที่สุด (Top Spenders)?
-* ลูกค้าแต่ละคนมีคำสั่งซื้อที่ยืนยันแล้ว, รอตรวจสอบ, หรือยกเลิกจำนวนเท่าใด?
+* ลูกค้ารายใดมีพฤติกรรมการกลับมาซื้อซ้ำตั้งแต่ 2 ครั้งขึ้นไป?
+* ใครคือลูกค้ากลุ่มสำคัญที่สร้างรายได้สะสมสูงสุดให้กับร้านค้า?
 
-### 4.2 คำสั่ง SQL ที่ใช้
+### 4.2 คำสั่ง SQL ที่ใช้ (ไฮไลท์: ใช้ HAVING กรองเงื่อนไขหลัง GROUP BY)
 ```sql
 SELECT 
-    u.user_id,
-    u.username,
-    u.full_name,
-    u.email,
-    COUNT(o.order_id) AS total_orders,
-    SUM(CASE WHEN o.status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed_orders,
-    SUM(CASE WHEN o.status = 'pending' THEN 1 ELSE 0 END) AS pending_orders,
-    SUM(CASE WHEN o.status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_orders,
-    COALESCE(SUM(CASE WHEN o.status = 'confirmed' THEN o.total_amount ELSE 0 END), 0) AS total_spent
-FROM users u
-JOIN orders o ON u.user_id = o.user_id
-WHERE u.role_id = 1
-GROUP BY u.user_id, u.username, u.full_name, u.email
-HAVING total_orders >= 2
-ORDER BY total_spent DESC, total_orders DESC;
+    users.full_name,
+    COUNT(orders.order_id) AS total_orders,
+    SUM(orders.total_amount) AS total_spent
+FROM users
+JOIN orders ON users.user_id = orders.user_id
+WHERE orders.status = 'confirmed'
+GROUP BY users.full_name
+HAVING COUNT(orders.order_id) >= 2
+ORDER BY total_spent DESC;
 ```
 
 ### 4.3 ผลลัพธ์จากการรันจริงในระบบ
-| ลูกค้า (full_name) | Username | คำสั่งซื้อทั้งหมด | ยืนยันแล้ว | รอตรวจ | ยกเลิก | ยอดซื้อสะสมสุทธิ (total_spent) |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **นายธนวัฒน์ นามเหง้า** | `thanawat` | 5 | 4 | 1 | 0 | **฿1,750.00** |
-| **นายภานุวัฒน์ แสงเครือ** | `panuwat` | 4 | 3 | 1 | 0 | **฿1,240.00** |
-| **ชวลิต ธนกิจ** | `chavalit` | 2 | 2 | 0 | 0 | **฿1,180.00** |
-| **ธีรภัทร พงษ์ศิริ** | `teerapat` | 2 | 2 | 0 | 0 | **฿1,230.00** |
-| **สุดา เกียรติสกุล** | `suda` | 3 | 3 | 0 | 0 | **฿1,220.00** |
-| **สมชาย ดำรงไทย** | `somchai` | 3 | 3 | 0 | 0 | **฿1,240.00** |
-| **กัญญา วารินทร์** | `kanya` | 3 | 3 | 0 | 0 | **฿1,080.00** |
-| **วิชัย บุญมา** | `wichai` | 3 | 2 | 1 | 0 | **฿740.00** |
-| **อานนท์ มั่นคง** | `anon` | 2 | 2 | 0 | 0 | **฿760.00** |
-| **พิมพา ชูใจ** | `pimpa` | 2 | 2 | 0 | 0 | **฿570.00** |
+| ชื่อลูกค้า (full_name) | จำนวนคำสั่งซื้อ (total_orders) | ยอดซื้อรวมสะสม (total_spent) |
+| :--- | :---: | :---: |
+| **นายธนวัฒน์ นามเหง้า** | 4 ครั้ง | ฿1,750.00 |
+| **นายภานุวัฒน์ แสงเครือ** | 3 ครั้ง | ฿1,240.00 |
+| **สมชาย ดำรงไทย** | 3 ครั้ง | ฿1,240.00 |
+| **ธีรภัทร พงษ์ศิริ** | 2 ครั้ง | ฿1,230.00 |
+| **สุดา เกียรติสกุล** | 3 ครั้ง | ฿1,220.00 |
+| **ชวลิต ธนกิจ** | 2 ครั้ง | ฿1,180.00 |
+| **กัญญา วารินทร์** | 3 ครั้ง | ฿1,080.00 |
+| **อานนท์ มั่นคง** | 2 ครั้ง | ฿760.00 |
+| **วิชัย บุญมา** | 2 ครั้ง | ฿740.00 |
+| **พิมพา ชูใจ** | 2 ครั้ง | ฿570.00 |
+| **ณัฐพร สุขเกษม** | 2 ครั้ง | ฿455.00 |
 
-### 4.4 ข้อสรุปและการนำไปใช้ (Insight)
-* ลูกค้าชั้นดีที่มียอดซื้อสะสมสูงสุดคือ `thanawat` (4 คำสั่งซื้อสำเร็จ ยอด 1,750 บาท) และ `panuwat` (3 คำสั่งซื้อสำเร็จ ยอด 1,240 บาท)
-* ระบบสามารถนำข้อมูลในรายงานนี้ไปพัฒนาระบบ Loyalty Program หรือแจกคูปองส่วนลดสำหรับลูกค้ากลุ่ม Top Spenders ที่มียอดซื้อเกิน 1,000 บาทได้
+### 4.4 ข้อสรุปและการนำไปใช้ (Business Insight)
+* พบลูกค้าประจำที่กลับมาซื้อซ้ำตั้งแต่ 2 ครั้งขึ้นไปจำนวน 11 ราย โดยลูกค้าอันดับ 1-7 มียอดซื้อสะสมเกิน 1,000 บาท
+* ทางร้านสามารถนำรายชื่อนี้ไปตั้งเป็นสมาชิกระดับ VIP และส่งโค้ดส่วนลดพิเศษทางอีเมลเพื่อส่งเสริมความภักดีต่อแบรนด์ (Brand Loyalty) ได้ทันที
