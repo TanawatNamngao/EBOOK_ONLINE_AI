@@ -744,11 +744,24 @@ async function loadMyOrders() {
             let itemsHtml = ord.items.map(item => {
                 let downloadSection = '';
                 if (!item.download_locked && item.token) {
-                    downloadSection = `
-                        <a href="/api/download/${item.token}" class="btn btn-primary btn-sm" target="_blank" style="background:#059669; text-decoration:none;">
-                            📥 ดาวน์โหลด E-Book (${item.download_count}/${item.max_downloads} ครั้ง)
-                        </a>
-                    `;
+                    if (item.download_count >= item.max_downloads) {
+                        downloadSection = `
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                <span style="font-size:0.8rem; color:#f87171; background:rgba(239,68,68,0.12); padding:5px 10px; border-radius:6px; border:1px solid rgba(239,68,68,0.3); font-weight:600;">
+                                    🔒 ครบ ${item.download_count}/${item.max_downloads} ครั้ง (หมดโควตา)
+                                </span>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="reorderEbook(${item.ebook_id})" style="background:#0284c7; padding:5px 12px; font-size:0.8rem;">
+                                    🛒 สั่งซื้อเพื่อรับสิทธิ์ใหม่
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        downloadSection = `
+                            <a href="/api/download/${item.token}" class="btn btn-primary btn-sm" target="_blank" style="background:#059669; text-decoration:none;">
+                                📥 ดาวน์โหลด E-Book (${item.download_count}/${item.max_downloads} ครั้ง)
+                            </a>
+                        `;
+                    }
                 } else {
                     downloadSection = `
                         <span style="font-size:0.8rem; color:#f59e0b; background:rgba(245,158,11,0.1); padding:4px 8px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);">
@@ -861,5 +874,11 @@ async function submitEditProfile(e) {
         btn.disabled = false;
         btn.innerHTML = 'บันทึกข้อมูล ➔';
     }
+}
+
+async function reorderEbook(ebookId) {
+    closeOrdersModal();
+    await addToCart(ebookId);
+    toggleCartDrawer();
 }
 

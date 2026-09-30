@@ -438,16 +438,19 @@ app.post('/api/cart/items', (req, res) => {
             return res.status(400).json({ error: 'หนังสือเล่มนี้ไม่พร้อมจำหน่าย' });
         }
 
-        // Check if user already owns this ebook in a confirmed order
-        const alreadyBought = db.prepare(`
-            SELECT oi.order_item_id 
-            FROM order_items oi
-            JOIN orders o ON oi.order_id = o.order_id
-            WHERE o.user_id = ? AND oi.ebook_id = ? AND o.status = 'confirmed'
+        // Check if user still has remaining download quota for this ebook in a confirmed order
+        const activeQuota = db.prepare(`
+            SELECT dl.download_id, dl.download_count, dl.max_downloads
+            FROM download_links dl
+            JOIN orders o ON dl.order_id = o.order_id
+            WHERE o.user_id = ? AND dl.ebook_id = ? AND o.status = 'confirmed'
+              AND dl.download_count < dl.max_downloads
         `).get(user.user_id, ebook_id);
 
-        if (alreadyBought) {
-            return res.status(400).json({ error: 'ท่านได้สั่งซื้อและมีสิทธิ์ใน E-Book เล่มนี้แล้ว' });
+        if (activeQuota) {
+            return res.status(400).json({ 
+                error: `ท่านยังมีสิทธิ์ดาวน์โหลด E-Book เล่มนี้คงเหลือ (${activeQuota.download_count}/${activeQuota.max_downloads} ครั้ง) ในประวัติคำสั่งซื้อ` 
+            });
         }
 
         const cartId = getOrCreateUserCart(user.user_id);
@@ -743,9 +746,18 @@ app.get('/api/download/:token', (req, res) => {
         // Check download limits
         if (downloadRecord.download_count >= downloadRecord.max_downloads) {
             return res.status(403).send(`
-                <div style="font-family: sans-serif; text-align: center; padding: 50px;">
-                    <h1 style="color: #ea580c;">สิทธิ์ดาวน์โหลดครบจำนวนที่กำหนดแล้ว</h1>
-                    <p>คุณดาวน์โหลดหนังสือเล่มนี้ครบตามโควตา (${downloadRecord.max_downloads} ครั้ง) แล้ว</p>
+                <div style="font-family: sans-serif; text-align: center; padding: 50px; line-height: 1.6;">
+                    <h1 style="color: #ea580c; font-size: 24px;">🔒 สิทธิ์ดาวน์โหลดครบตามโควตาแล้ว (${downloadRecord.max_downloads}/${downloadRecord.max_downloads} ครั้ง)</h1>
+                    <p style="font-size: 16px; color: #475569; margin: 12px 0;">
+                        คุณได้ดาวน์โหลดไฟล์ E-Book <strong>"${downloadRecord.title}"</strong> ครบตามโควตาความปลอดภัย (${downloadRecord.max_downloads} ครั้ง) แล้ว
+                    </p>
+                    <p style="color: #64748b; font-size: 14px;">
+                        หากต้องการดาวน์โหลดเพิ่มเติม ท่านสามารถสั่งซื้อเล่มนี้ใหม่ผ่านหน้าร้านเพื่อรับโควตาดาวน์โหลดเพิ่มอีก 10 ครั้งได้ทันที
+                    </p>
+                    <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
+                        <a href="/#catalog" style="display:inline-block; padding:10px 20px; background:#0284c7; color:#fff; text-decoration:none; border-radius:6px; font-weight:600;">🛒 ไปสั่งซื้อที่หน้าร้าน</a>
+                        <a href="/#orders" style="display:inline-block; padding:10px 20px; background:#64748b; color:#fff; text-decoration:none; border-radius:6px;">📋 ดูประวัติคำสั่งซื้อ</a>
+                    </div>
                 </div>
             `);
         }
