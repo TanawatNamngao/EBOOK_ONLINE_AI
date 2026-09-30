@@ -11,7 +11,7 @@
 
 ## เครื่องมือและเทคโนโลยีที่ใช้ (Tech Stack)
 * **ภาษาหลัก:** JavaScript (Node.js ES Modules / Express) + HTML5 / Vanilla CSS
-* **Database Management System (DBMS):** SQLite (ผ่านไดรเวอร์ `better-sqlite3` รองรับ ACID, Constraints, Foreign Keys และไฟล์ `.sql` มาตรฐาน)
+* **Database Management System (DBMS):** Supabase (Cloud PostgreSQL) และ SQLite (Local Embedded Cache) รองรับมาตรฐาน ACID, Constraints, Foreign Keys และ Realtime Cloud Data Synchronization
 * **เครื่องมือออกแบบ & เอกสาร:** Mermaid.js (สำหรับ ERD), Markdown Documentation
 * **เครื่องมือ AI Assistant:** Google DeepMind Antigravity AI (บันทึกขั้นตอนการให้คำปรึกษาและตรวจสอบความถูกต้องอย่างรับผิดชอบ)
 

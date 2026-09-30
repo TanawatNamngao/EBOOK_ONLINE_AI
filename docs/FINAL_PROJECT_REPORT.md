@@ -121,11 +121,11 @@
 
 | องค์ประกอบ | เทคโนโลยีที่เลือกใช้ | บทบาทและความเหมาะสม |
 | :--- | :--- | :--- |
-| **ระบบจัดการฐานข้อมูล (DBMS)** | SQLite (Production-grade Better-SQLite3) / PostgreSQL | ฐานข้อมูลเชิงสัมพันธ์มาตรฐาน รองรับ ACID, Constraints ครบถ้วน, รวดเร็ว และรองรับ Foreign Keys |
+| **ระบบจัดการฐานข้อมูล (DBMS)** | Supabase (Cloud PostgreSQL) & SQLite | ระบบจัดการฐานข้อมูลเชิงสัมพันธ์บนคลาวด์ (Cloud RDBMS) มาตรฐาน PostgreSQL รองรับ ACID, Constraints ครบถ้วน, รวดเร็ว และรองรับ Foreign Keys พร้อม Realtime Cloud Sync |
 | **เว็บเซิร์ฟเวอร์และแบ็กเอนด์** | Node.js (v24 LTS) & Express Framework | ระบบประมวลผลเซิร์ฟเวอร์ประสิทธิภาพสูง รองรับ RESTful API และการจัดการ Session / RBAC |
 | **ส่วนติดต่อผู้ใช้งาน (Frontend)** | Modern HTML5, Responsive Vanilla CSS & JavaScript | UI ทันสมัย Dark Mode Glassmorphism สอดคล้องกับมาตรฐานความเร็วสูงและไม่มี Dependency ภายนอก |
 | **การจัดเก็บรูปภาพและสลิป** | Local File Storage with Express Static Routing | จัดเก็บสลิปการโอนเงินและภาพปกหนังสือในเซิร์ฟเวอร์อย่างเป็นระบบ |
-| **ระบบคลาวด์โฮสติ้ง** | Render Cloud Platform & GitHub CI/CD | โฮสต์ระบบออนไลน์ตลอด 24 ชั่วโมง พร้อมระบบ Auto-Deploy ผ่าน Git Repository |
+| **ระบบคลาวด์และดาต้าโฮสติ้ง** | Supabase Cloud (Database), Render (App) & GitHub CI/CD | โฮสต์ระบบออนไลน์ตลอด 24 ชั่วโมง พร้อมระบบ Cloud Database Persistence และ Auto-Deploy ผ่าน Git Repository |
 | **เครื่องมือปัญญาประดิษฐ์** | Antigravity AI (Google DeepMind) | เครื่องมือช่วยออกแบบ ERD, สร้าง SQL Query ที่ซับซ้อน, และตรวจสอบข้อผิดพลาดของโค้ด |
 
 ## 1.5 การแบ่งหน้าที่ความรับผิดชอบและการนำเสนอ (ตามข้อกำหนดข้อ 9 ในใบงาน)
