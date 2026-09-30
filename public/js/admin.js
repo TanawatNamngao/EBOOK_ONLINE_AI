@@ -440,23 +440,22 @@ async function loadAllReports() {
     loadReport4();
 }
 
-// รายงานที่ 1: ยอดขายตามช่วงเวลา
+// รายงานที่ 1: สรุปยอดขายและจำนวนเล่มที่ขายได้ของหนังสือแต่ละเล่ม
 async function loadReport1() {
     try {
-        const res = await fetch('/api/admin/reports/sales-over-time');
+        const res = await fetch('/api/admin/reports/sales-by-book');
         const data = await res.json();
         const tbody = document.querySelector('#report1-table tbody');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
-        data.monthly.forEach(row => {
+        data.forEach((row, idx) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong>${row.sale_period}</strong></td>
-                <td>${row.total_orders} ออเดอร์</td>
-                <td><strong style="color:#10b981;">฿${parseFloat(row.gross_sales).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
-                <td>฿${parseFloat(row.average_order_value).toFixed(2)}</td>
-                <td>฿${parseFloat(row.min_order_amount).toFixed(2)}</td>
-                <td>฿${parseFloat(row.max_order_amount).toFixed(2)}</td>
+                <td><strong>${idx + 1}</strong></td>
+                <td><strong>${row.title}</strong></td>
+                <td><strong style="color:#f59e0b; font-size:1.05rem;">${row.total_sold} เล่ม</strong></td>
+                <td><strong style="color:#10b981; font-size:1.05rem;">฿${parseFloat(row.total_sales).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
             `;
             tbody.appendChild(tr);
         });
@@ -465,25 +464,23 @@ async function loadReport1() {
     }
 }
 
-// รายงานที่ 2: E-Book ขายดีที่สุด
+// รายงานที่ 2: จัดอันดับ E-Book ขายดีที่สุด 3 อันดับแรก (Top 3 Bestsellers)
 async function loadReport2() {
     try {
-        const res = await fetch('/api/admin/reports/best-sellers');
+        const res = await fetch('/api/admin/reports/best-sellers-top3');
         const data = await res.json();
         const tbody = document.querySelector('#report2-table tbody');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
         data.forEach((b, index) => {
             const tr = document.createElement('tr');
-            const medal = index === 0 ? '🥇 ' : (index === 1 ? '🥈 ' : (index === 2 ? '🥉 ' : ''));
+            const medal = index === 0 ? '🥇 อันดับ 1' : (index === 1 ? '🥈 อันดับ 2' : '🥉 อันดับ 3');
+            const medalColor = index === 0 ? '#f59e0b' : (index === 1 ? '#94a3b8' : '#d97706');
             tr.innerHTML = `
-                <td><strong>${medal}#${index + 1}</strong></td>
-                <td><strong>${b.ebook_title}</strong></td>
-                <td>${b.author_name}</td>
-                <td><span class="status-badge" style="background:rgba(56,189,248,0.1); color:#38bdf8;">${b.category_name}</span></td>
-                <td>฿${parseFloat(b.current_price).toFixed(2)}</td>
-                <td><strong style="color:#f59e0b; font-size:1.05rem;">${b.total_copies_sold} เล่ม</strong></td>
-                <td><strong style="color:#10b981;">฿${parseFloat(b.total_revenue).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
+                <td><strong style="color:${medalColor}; font-size:1.05rem;">${medal}</strong></td>
+                <td><strong>${b.title}</strong></td>
+                <td><strong style="color:#10b981; font-size:1.15rem;">${b.total_sold} เล่ม</strong></td>
             `;
             tbody.appendChild(tr);
         });
@@ -492,29 +489,29 @@ async function loadReport2() {
     }
 }
 
-// รายงานที่ 3: ยอดขายตามหมวดหมู่
+// รายงานที่ 3: สรุปประสิทธิภาพช่องทางชำระเงินและยอดเฉลี่ยต่อบิล
 async function loadReport3() {
     try {
-        const res = await fetch('/api/admin/reports/sales-by-category');
+        const res = await fetch('/api/admin/reports/payment-methods');
         const data = await res.json();
         const tbody = document.querySelector('#report3-table tbody');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
-        data.forEach(c => {
+        const methodNames = {
+            'promptpay_qr': '📱 PromptPay QR (พร้อมเพย์)',
+            'bank_transfer': '🏦 โอนผ่านธนาคาร (Bank Transfer)',
+            'mock_gateway': '💳 บัตรเครดิต/เกตเวย์จำลอง'
+        };
+
+        data.forEach(m => {
             const tr = document.createElement('tr');
+            const name = methodNames[m.payment_method] || m.payment_method;
             tr.innerHTML = `
-                <td><strong>${c.category_name}</strong></td>
-                <td>${c.total_active_titles} เล่ม</td>
-                <td>${c.total_items_sold} รายการ</td>
-                <td><strong style="color:#10b981;">฿${parseFloat(c.total_category_revenue).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; height:8px; background:var(--bg-surface-elevated); border-radius:4px; overflow:hidden;">
-                            <div style="width:${c.revenue_percentage}%; height:100%; background:linear-gradient(90deg, #6366f1, #38bdf8);"></div>
-                        </div>
-                        <span style="font-weight:bold; font-size:0.85rem; width:45px;">${c.revenue_percentage}%</span>
-                    </div>
-                </td>
+                <td><strong>${name}</strong></td>
+                <td>${m.total_orders} ออเดอร์</td>
+                <td><strong style="color:#10b981;">฿${parseFloat(m.total_sales).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
+                <td><strong style="color:#38bdf8;">฿${parseFloat(m.avg_sales).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
             `;
             tbody.appendChild(tr);
         });
@@ -523,23 +520,21 @@ async function loadReport3() {
     }
 }
 
-// รายงานที่ 4: พฤติกรรมลูกค้าและคำสั่งซื้อ
+// รายงานที่ 4: ค้นหาลูกค้าประจำที่ซื้อตั้งแต่ 2 ครั้งขึ้นไป (Customer Insights)
 async function loadReport4() {
     try {
-        const res = await fetch('/api/admin/reports/customer-insights');
+        const res = await fetch('/api/admin/reports/repeat-customers');
         const data = await res.json();
         const tbody = document.querySelector('#report4-table tbody');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
-        data.customers.forEach(u => {
+        data.forEach((u, idx) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td><strong>${idx + 1}</strong></td>
                 <td><strong>${u.full_name}</strong></td>
-                <td>${u.username} <span style="color:var(--text-muted); font-size:0.8rem;">(${u.email})</span></td>
-                <td><strong>${u.total_orders}</strong></td>
-                <td><span class="status-badge status-confirmed">${u.confirmed_orders}</span></td>
-                <td><span class="status-badge status-pending">${u.pending_orders}</span></td>
-                <td><span class="status-badge status-cancelled">${u.cancelled_orders}</span></td>
+                <td><span class="status-badge status-confirmed">${u.total_orders} ครั้ง</span></td>
                 <td><strong style="color:#10b981; font-size:1.05rem;">฿${parseFloat(u.total_spent).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
             `;
             tbody.appendChild(tr);
