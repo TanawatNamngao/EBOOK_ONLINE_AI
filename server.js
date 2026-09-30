@@ -14,9 +14,12 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-// Static Files with custom headers for SVG/Slip images
+// Static Files with custom headers for SVG/Slip images and cache management
 app.use(express.static(path.join(__dirname, 'public'), {
     setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js') || filePath.endsWith('.html') || filePath.endsWith('.css')) {
+            res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+        }
         if (filePath.includes('slips') || filePath.includes('covers')) {
             try {
                 const fd = fs.openSync(filePath, 'r');
@@ -574,6 +577,7 @@ app.get('/api/slips/preview', (req, res) => {
             bankThemeKey: method === 'bank_transfer' ? 'KBANK' : 'PROMPTPAY'
         });
         res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         res.send(svg);
     } catch (err) {
         res.status(500).send('Error generating slip preview');

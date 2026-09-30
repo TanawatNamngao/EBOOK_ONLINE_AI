@@ -484,6 +484,9 @@ function openCheckoutModal() {
     const modal = document.getElementById('checkout-modal');
     modal.classList.add('active');
 
+    const totalAmount = parseFloat(currentCartData.total_amount || 0);
+    const totalFormatted = totalAmount.toFixed(2);
+
     // Build order summary
     const summary = document.getElementById('checkout-order-summary');
     let itemsHtml = currentCartData.items.map(i => `
@@ -498,37 +501,98 @@ function openCheckoutModal() {
         ${itemsHtml}
         <div style="display:flex; justify-content:space-between; margin-top:10px; border-top:1px solid var(--border); padding-top:8px; font-weight:bold; font-size:1.1rem;">
             <span>ยอดชำระสุทธิ:</span>
-            <span style="color:#38bdf8;">฿${parseFloat(currentCartData.total_amount).toFixed(2)}</span>
+            <span style="color:#38bdf8;">฿${totalFormatted}</span>
         </div>
     `;
 
-    document.getElementById('checkout-qr-amount').textContent = `฿${parseFloat(currentCartData.total_amount).toFixed(2)}`;
+    document.getElementById('checkout-qr-amount').textContent = `฿${totalFormatted}`;
+
+    // Auto-generate matching mock slip immediately so user sees the matching slip right away!
+    usePrebuiltMockSlip(true);
 }
 
 function closeCheckoutModal() {
     document.getElementById('checkout-modal').classList.remove('active');
+    activeMockSlipUrl = null;
+    const status = document.getElementById('slip-preview-status');
+    const container = document.getElementById('slip-preview-container');
+    const previewImg = document.getElementById('checkout-slip-preview-img');
+    const fileInput = document.getElementById('slip-file-input');
+    if (fileInput) fileInput.value = '';
+    if (status) {
+        status.style.display = 'none';
+        status.innerHTML = '';
+    }
+    if (container) container.style.display = 'none';
+    if (previewImg) previewImg.src = '';
 }
 
-function usePrebuiltMockSlip() {
-    const totalAmount = currentCartData.total_amount || 0;
+function usePrebuiltMockSlip(isAuto = false) {
+    const totalAmount = parseFloat(currentCartData.total_amount || 0);
     const selectedMethod = document.querySelector('input[name="pay-method"]:checked')?.value || 'promptpay_qr';
+    const timestamp = Date.now();
     
     // Dynamic slip preview matching the EXACT cart total amount & user name
-    activeMockSlipUrl = `/api/slips/preview?amount=${encodeURIComponent(totalAmount)}&name=${encodeURIComponent(currentUserName || 'ลูกค้า EBOOK_ONLINE')}&method=${encodeURIComponent(selectedMethod)}`;
+    activeMockSlipUrl = `/api/slips/preview?amount=${encodeURIComponent(totalAmount)}&name=${encodeURIComponent(currentUserName || 'ลูกค้า EBOOK_ONLINE')}&method=${encodeURIComponent(selectedMethod)}&t=${timestamp}`;
     
     const status = document.getElementById('slip-preview-status');
     const container = document.getElementById('slip-preview-container');
     const previewImg = document.getElementById('checkout-slip-preview-img');
+    const fileInput = document.getElementById('slip-file-input');
+    if (fileInput) fileInput.value = '';
     
     if (status) {
         status.style.display = 'block';
-        status.innerHTML = `✓ สร้างสลิปจำลองตรงตามยอดชำระจริง (฿${parseFloat(totalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}) สำเร็จ`;
+        status.innerHTML = `✓ สร้างสลิปจำลองตรงตามยอดชำระจริง (฿${totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}) เรียบร้อย`;
     }
     if (previewImg && container) {
         previewImg.src = activeMockSlipUrl;
         container.style.display = 'block';
     }
-    showToast(`แนบสลิปจำลองยอดเงิน ฿${parseFloat(totalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })} เรียบร้อย`);
+    if (!isAuto) {
+        showToast(`แนบสลิปจำลองยอดเงิน ฿${totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} เรียบร้อย`);
+    }
+}
+
+function handlePaymentMethodChange(radio) {
+    document.querySelectorAll('input[name="pay-method"]').forEach(r => {
+        const label = r.closest('label');
+        if (label) {
+            if (r.checked) {
+                label.style.borderColor = 'var(--primary)';
+                label.style.background = 'rgba(99,102,241,0.1)';
+            } else {
+                label.style.borderColor = 'var(--border)';
+                label.style.background = 'transparent';
+            }
+        }
+    });
+    // Auto-update slip preview with new theme
+    if (activeMockSlipUrl || document.getElementById('slip-preview-container')?.style.display !== 'none') {
+        usePrebuiltMockSlip(true);
+    }
+}
+
+function handleSlipFileChange(input) {
+    if (input.files && input.files[0]) {
+        activeMockSlipUrl = null;
+        const status = document.getElementById('slip-preview-status');
+        const container = document.getElementById('slip-preview-container');
+        const previewImg = document.getElementById('checkout-slip-preview-img');
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if (previewImg && container) {
+                previewImg.src = e.target.result;
+                container.style.display = 'block';
+            }
+            if (status) {
+                status.style.display = 'block';
+                status.innerHTML = `✓ แนบไฟล์ ${file.name} เรียบร้อย`;
+            }
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
 // In-app Slip Viewer Modal
@@ -544,7 +608,8 @@ function viewSlipModal(url, orderNum) {
 
     if (titleEl) titleEl.textContent = `📄 หลักฐานสลิปคำสั่งซื้อ: ${orderNum || ''}`;
     if (imgEl) {
-        imgEl.src = url;
+        const bustUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+        imgEl.src = bustUrl;
         imgEl.onerror = () => {
             imgEl.onerror = null;
             imgEl.src = '/assets/slips/slip_mock_01.svg';

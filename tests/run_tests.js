@@ -65,8 +65,18 @@ async function runTests() {
         assert('TC-04', 'ระบบตะกร้าสินค้าคำนวณยอดถูกต้อง', resCart.status === 200 && cartData.cart_id !== undefined);
 
         // TC-05: สั่งซื้อและชำระเงินจำลอง (Pending)
-        const pendingOrder = db.prepare("SELECT order_id, status FROM orders WHERE status = 'pending' LIMIT 1").get();
-        assert('TC-05', 'สั่งซื้อและบันทึกสถานะเริ่มต้นเป็น pending', pendingOrder && pendingOrder.status === 'pending');
+        const targetBook = db.prepare("SELECT ebook_id FROM ebooks WHERE is_published = 1 LIMIT 1").get();
+        await fetch('http://localhost:3000/api/cart/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-user-id': regData.user.user_id },
+            body: JSON.stringify({ ebook_id: targetBook.ebook_id })
+        });
+        const checkoutRes = await fetch('http://localhost:3000/api/orders/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-user-id': regData.user.user_id }
+        });
+        const pendingOrder = db.prepare("SELECT order_id, status FROM orders WHERE user_id = ? AND status = 'pending'").get(regData.user.user_id);
+        assert('TC-05', 'สั่งซื้อและบันทึกสถานะเริ่มต้นเป็น pending', checkoutRes.status === 201 && pendingOrder && pendingOrder.status === 'pending');
 
         // TC-06: เปิดดาวน์โหลดสำหรับคำสั่งซื้อที่อนุมัติแล้ว
         const confirmedDownload = db.prepare(`
