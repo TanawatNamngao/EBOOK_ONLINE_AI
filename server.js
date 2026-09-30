@@ -1121,7 +1121,7 @@ app.get(['/api/admin/reports/best-sellers-top3', '/api/admin/reports/best-seller
     }
 });
 
-// รายงานที่ 3: สรุปประสิทธิภาพช่องทางชำระเงินและยอดเฉลี่ยต่อบิล (JOIN, GROUP BY, COUNT, SUM, AVG, ROUND)
+// รายงานที่ 3: สรุปประสิทธิภาพช่องทางชำระเงินและยอดเฉลี่ยต่อบิล (JOIN, GROUP BY, COUNT, SUM, AVG, ROUND, ORDER BY)
 app.get(['/api/admin/reports/payment-methods', '/api/admin/reports/sales-by-category'], (req, res) => {
     try {
         const data = db.prepare(`
@@ -1134,6 +1134,7 @@ app.get(['/api/admin/reports/payment-methods', '/api/admin/reports/sales-by-cate
             JOIN payments ON orders.order_id = payments.order_id
             WHERE orders.status = 'confirmed'
             GROUP BY payments.payment_method
+            ORDER BY total_sales DESC
         `).all();
         res.json(data);
     } catch (err) {

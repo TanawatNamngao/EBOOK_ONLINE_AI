@@ -40,7 +40,7 @@ LIMIT 3;
 -- --------------------------------------------------------------------
 -- รายงานที่ 3: สรุปประสิทธิภาพช่องทางชำระเงินและยอดเฉลี่ยต่อบิล
 -- วัตถุประสงค์: ดูว่าลูกค้าชอบจ่ายเงินทางไหนมากที่สุด และเฉลี่ยบิลละกี่บาท
--- ฟังก์ชันที่ใช้: JOIN, GROUP BY, COUNT, SUM, AVG, ROUND
+-- ฟังก์ชันที่ใช้: JOIN, GROUP BY, COUNT, SUM, AVG, ROUND, ORDER BY
 -- ผู้รับผิดชอบอธิบาย: นายภานุวัฒน์ แสงเครือ (67332110248-5)
 -- --------------------------------------------------------------------
 SELECT 
@@ -51,7 +51,8 @@ SELECT
 FROM orders
 JOIN payments ON orders.order_id = payments.order_id
 WHERE orders.status = 'confirmed'
-GROUP BY payments.payment_method;
+GROUP BY payments.payment_method
+ORDER BY total_sales DESC;
 
 
 -- --------------------------------------------------------------------

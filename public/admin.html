@@ -416,7 +416,7 @@ LIMIT 3;
                         </div>
 
                         <details class="sql-accordion" open>
-                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, COUNT, SUM, AVG, ROUND)</summary>
+                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, COUNT, SUM, AVG, ROUND, ORDER BY)</summary>
                             <pre class="sql-code-block">
 SELECT 
     payments.payment_method,
@@ -426,7 +426,8 @@ SELECT
 FROM orders
 JOIN payments ON orders.order_id = payments.order_id
 WHERE orders.status = 'confirmed'
-GROUP BY payments.payment_method;
+GROUP BY payments.payment_method
+ORDER BY total_sales DESC;
                             </pre>
                         </details>
                     </div>
@@ -652,6 +653,6 @@ ORDER BY total_spent DESC;
     <!-- Toast Notification -->
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="/js/admin.js?v=20260930_slipfix"></script>
+    <script src="/js/admin.js?v=20260930_orderby"></script>
 </body>
 </html>

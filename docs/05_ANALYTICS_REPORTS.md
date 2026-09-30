@@ -99,7 +99,8 @@ SELECT
 FROM orders
 JOIN payments ON orders.order_id = payments.order_id
 WHERE orders.status = 'confirmed'
-GROUP BY payments.payment_method;
+GROUP BY payments.payment_method
+ORDER BY total_sales DESC;
 ```
 
 ### 3.3 ผลลัพธ์จากการรันจริงในระบบ

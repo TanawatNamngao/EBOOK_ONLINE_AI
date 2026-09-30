@@ -403,7 +403,7 @@ LIMIT 3;
 
 ## 4.3 รายงานที่ 3: สรุปประสิทธิภาพช่องทางชำระเงินและยอดเฉลี่ยต่อบิล
 * **คำถามทางธุรกิจ:** ลูกค้านิยมชำระเงินผ่านช่องทางใดมากที่สุด และมียอดเฉลี่ยต่อบิลเท่าไหร่?
-* **คำสั่ง SQL Query (JOIN, GROUP BY, COUNT, SUM, AVG, ROUND):**
+* **คำสั่ง SQL Query (JOIN, GROUP BY, COUNT, SUM, AVG, ROUND, ORDER BY):**
 ```sql
 SELECT 
     payments.payment_method,
@@ -413,7 +413,8 @@ SELECT
 FROM orders
 JOIN payments ON orders.order_id = payments.order_id
 WHERE orders.status = 'confirmed'
-GROUP BY payments.payment_method;
+GROUP BY payments.payment_method
+ORDER BY total_sales DESC;
 ```
 
 * **ตารางสรุปผลลัพธ์จากฐานข้อมูลจริง:**
