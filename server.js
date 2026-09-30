@@ -587,6 +587,61 @@ app.get('/api/slips/preview', (req, res) => {
     }
 });
 
+// Dynamic Slip Serving / Fallback generator for ANY order (prevents 404 and mismatched fallback slips)
+app.get(['/api/orders/:id/slip', '/assets/slips/slip_order_:id.svg', '/assets/slips/slip_order_:id.png'], (req, res) => {
+    try {
+        const orderId = req.params.id;
+        const slipsDir = path.join(__dirname, 'public', 'assets', 'slips');
+        const svgFile = path.join(slipsDir, `slip_order_${orderId}.svg`);
+
+        // If file exists on disk, send it
+        if (fs.existsSync(svgFile)) {
+            res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            return res.sendFile(svgFile);
+        }
+
+        // If not found on disk (e.g. after Render restart/deploy), generate dynamically from DB
+        const order = db.prepare(`
+            SELECT o.order_id, o.order_number, o.total_amount, o.status, o.created_at,
+                   u.full_name, u.username,
+                   p.payment_method, p.amount, p.paid_at
+            FROM orders o
+            JOIN users u ON o.user_id = u.user_id
+            LEFT JOIN payments p ON o.order_id = p.order_id
+            WHERE o.order_id = ? OR o.order_number = ?
+        `).get(orderId, orderId);
+
+        if (!order) {
+            return res.redirect('/api/slips/preview?amount=0&name=' + encodeURIComponent('ลูกค้า'));
+        }
+
+        const theme = order.payment_method === 'bank_transfer' ? 'KBANK' : 'PROMPTPAY';
+        const svg = generateSlipSvg({
+            orderNumber: order.order_number,
+            customerName: order.full_name || order.username || 'ลูกค้าผู้มีอุปการคุณ',
+            amount: order.amount || order.total_amount,
+            bankThemeKey: theme,
+            dateStr: order.paid_at || order.created_at,
+            note: `ชำระคำสั่งซื้อ #${order.order_number}`
+        });
+
+        // Write to cache disk
+        try {
+            if (!fs.existsSync(slipsDir)) fs.mkdirSync(slipsDir, { recursive: true });
+            fs.writeFileSync(svgFile, svg, 'utf8');
+            fs.writeFileSync(path.join(slipsDir, `slip_order_${orderId}.png`), svg, 'utf8');
+        } catch (e) {}
+
+        res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.send(svg);
+    } catch (err) {
+        console.error('Error generating dynamic slip:', err);
+        res.status(500).send('Error generating slip');
+    }
+});
+
 // Submit Mock Payment & Slip
 app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) => {
     try {

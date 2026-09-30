@@ -596,7 +596,7 @@ function handleSlipFileChange(input) {
 }
 
 // In-app Slip Viewer Modal
-function viewSlipModal(url, orderNum) {
+function viewSlipModal(url, orderNum, totalAmount, paymentMethod) {
     const modal = document.getElementById('store-slip-modal');
     if (!modal) {
         window.open(url, '_blank');
@@ -612,7 +612,7 @@ function viewSlipModal(url, orderNum) {
         imgEl.src = bustUrl;
         imgEl.onerror = () => {
             imgEl.onerror = null;
-            imgEl.src = '/assets/slips/slip_mock_01.svg';
+            imgEl.src = `/api/slips/preview?amount=${totalAmount || 0}&order_number=${encodeURIComponent(orderNum || '')}&method=${paymentMethod || 'promptpay_qr'}`;
         };
     }
     if (linkEl) linkEl.href = url;
@@ -804,7 +804,7 @@ async function loadMyOrders() {
 
                 <div style="font-size:0.82rem; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
                     <span>ช่องทาง: ${ord.payment_method === 'promptpay_qr' ? 'PromptPay QR' : 'โอนเงิน'}</span>
-                    ${ord.slip_image_url ? `<button type="button" class="btn btn-secondary btn-sm" onclick="viewSlipModal('${ord.slip_image_url}', '${ord.order_number}')" style="font-size:0.8rem; padding:4px 10px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🔍 ดูหลักฐานสลิปจำลอง</button>` : ''}
+                    ${ord.slip_image_url || ord.payment_status === 'submitted' || ord.status === 'confirmed' ? `<button type="button" class="btn btn-secondary btn-sm" onclick="viewSlipModal('${ord.slip_image_url || '/api/orders/' + ord.order_id + '/slip'}', '${ord.order_number}', ${ord.total_amount}, '${ord.payment_method}')" style="font-size:0.8rem; padding:4px 10px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🔍 ดูหลักฐานสลิปจำลอง</button>` : ''}
                 </div>
             `;
             container.appendChild(ordCard);
