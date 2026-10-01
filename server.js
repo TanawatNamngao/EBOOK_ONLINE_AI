@@ -1518,12 +1518,14 @@ app.get(['/api/admin/reports/sales-over-time', '/api/admin/reports/sales-by-time
         const { start_date, end_date } = req.query;
         let query = `
             SELECT 
-                DATE(created_at) AS sales_date,
-                COUNT(order_id) AS total_orders,
-                SUM(total_amount) AS total_sales,
-                ROUND(AVG(total_amount), 2) AS avg_order_value
+                DATE(orders.created_at) AS sales_date,
+                COUNT(orders.order_id) AS total_orders,
+                SUM(orders.total_amount) AS total_sales,
+                ROUND(AVG(orders.total_amount), 2) AS avg_order_value
             FROM orders
-            WHERE status = 'confirmed'
+            JOIN payments ON orders.order_id = payments.order_id
+            WHERE orders.status = 'confirmed'
+              AND orders.created_at >= '2026-01-01'
         `;
         const params = [];
         if (start_date) {
