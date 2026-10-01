@@ -277,6 +277,52 @@
         </div>
     </div>
 
+    <!-- Attach / Edit Slip Modal for Existing Pending Orders -->
+    <div class="modal-overlay" id="attach-slip-modal" style="z-index: 210;">
+        <div class="modal-card" style="max-width: 500px; padding: 24px;">
+            <button class="modal-close" onclick="closeAttachSlipModal()">✕</button>
+            <h3 style="font-size: 1.25rem; margin-bottom: 6px;">📤 แนบ / แก้ไขสลิปชำระเงิน</h3>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">
+                คำสั่งซื้อ: <strong id="attach-slip-order-num" style="color:#38bdf8;">ORD-xxxx</strong> | ยอดชำระ: <strong id="attach-slip-amount" style="color:#10b981;">฿0.00</strong>
+            </p>
+
+            <!-- Payment Method & Simulated QR -->
+            <div style="background:#ffffff; border-radius:12px; padding:12px; text-align:center; margin-bottom:16px;">
+                <div style="color:#0f172a; font-weight:bold; font-size:0.9rem; margin-bottom:4px;">สแกนเพื่อชำระเงิน (PromptPay)</div>
+                <img src="/assets/promptpay_qr.svg" id="attach-qr-img" style="width:140px; height:140px; object-fit:contain; border-radius:6px; border:1px solid #e2e8f0;" alt="PromptPay QR Code">
+                <div style="color:#64748b; font-size:0.8rem; margin-top:4px;">ยอดโอนตรงตามออเดอร์: <strong id="attach-qr-amount" style="color:#0369a1; font-size:1.05rem;">฿0.00</strong></div>
+            </div>
+
+            <!-- Choice 1: Fast 1-Click Simulated Slip -->
+            <div style="margin-bottom: 14px;">
+                <button class="btn btn-secondary btn-sm" type="button" onclick="useAttachMockSlip()" id="btn-attach-quick-slip" style="width:100%; border:1px solid var(--primary); padding:10px; font-weight:600; background:rgba(99,102,241,0.15); color:#a5b4fc; cursor:pointer;">
+                    ⚡ แนบสลิปจำลองทันที (1-Click Slip)
+                </button>
+            </div>
+
+            <!-- Choice 2: Upload Own File -->
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <span style="font-size:0.8rem; color:var(--text-muted); white-space:nowrap;">หรืออัปโหลดรูป:</span>
+                <input type="file" id="attach-slip-file-input" accept="image/*" onchange="handleAttachSlipFileChange(this)" style="font-size:0.82rem; color:var(--text-muted); width:100%;">
+            </div>
+
+            <!-- Status message -->
+            <div id="attach-slip-status" style="font-size:0.85rem; padding:8px 12px; border-radius:6px; margin-bottom:12px; display:none;"></div>
+
+            <!-- Preview Image Container -->
+            <div id="attach-slip-preview-container" style="display:none; margin-bottom:16px; text-align:center; background:rgba(15,23,42,0.4); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:4px;">ตัวอย่างสลิปที่จะส่ง:</div>
+                <img id="attach-slip-preview-img" src="" style="max-width:160px; max-height:220px; border-radius:6px; border:1px solid #cbd5e1; display:inline-block;" alt="ตัวอย่างสลิป">
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex; gap:10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeAttachSlipModal()" style="flex:1;">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" id="btn-submit-attach-slip" onclick="submitAttachSlip()" style="flex:2; font-weight:600;">บันทึกและส่งสลิป 🚀</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toast-container"></div>
 
@@ -293,6 +339,6 @@
         </div>
     </footer>
 
-    <script src="/js/app.js?v=20261001_v2"></script>
+    <script src="/js/app.js?v=20261001_v3"></script>
 </body>
 </html>

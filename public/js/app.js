@@ -958,18 +958,254 @@ async function loadMyOrders() {
                     ${itemsHtml}
                 </div>
 
-                <div style="font-size:0.82rem; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-                    <span>ช่องทาง: ${ord.payment_method === 'promptpay_qr' ? 'PromptPay QR' : 'โอนเงิน'}</span>
-                    ${ord.slip_image_url ? `<button type="button" class="btn btn-secondary btn-sm" onclick="viewSlipModal('${ord.slip_image_url || '/api/orders/' + ord.order_id + '/slip'}', '${ord.order_number}', ${ord.total_amount}, '${ord.payment_method}')" style="font-size:0.8rem; padding:4px 10px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🔍 ดูหลักฐานสลิปจำลอง</button>` : '<span style="color:#f87171; font-size:0.8rem; font-weight:600;">⚠️ ยังไม่ได้แนบสลิป (ค้างชำระ)</span>'}
-                </div>
-            `;
-            container.appendChild(ordCard);
-        });
+                let orderBottomActions = '';
+                if (ord.status === 'pending') {
+                    if (ord.slip_image_url) {
+                        orderBottomActions = `
+                            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="viewSlipModal('${ord.slip_image_url || '/api/orders/' + ord.order_id + '/slip'}', '${ord.order_number}', ${ord.total_amount}, '${ord.payment_method}')" style="font-size:0.8rem; padding:4px 10px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🔍 ดูสลิปที่แนบ</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="openAttachSlipModal(${ord.order_id}, '${ord.order_number}', ${ord.total_amount})" style="font-size:0.8rem; padding:4px 10px; color:#a5b4fc; border-color:rgba(99,102,241,0.4);">✏️ แก้ไขสลิป</button>
+                                <button type="button" class="btn btn-sm" onclick="cancelMyOrder(${ord.order_id}, '${ord.order_number}')" style="background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-size:0.8rem; padding:4px 10px; border-radius:6px; cursor:pointer;">✕ ยกเลิกคำสั่งซื้อ</button>
+                            </div>
+                        `;
+                    } else {
+                        orderBottomActions = `
+                            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                <span style="color:#f87171; font-size:0.82rem; font-weight:600;">⚠️ ยังไม่ได้แนบสลิป</span>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="openAttachSlipModal(${ord.order_id}, '${ord.order_number}', ${ord.total_amount})" style="font-size:0.82rem; padding:5px 12px; background:linear-gradient(135deg, #0284c7, #2563eb); font-weight:600; border-radius:6px; box-shadow:0 2px 8px rgba(37,99,235,0.3);">📤 แนบสลิปชำระเงิน</button>
+                                <button type="button" class="btn btn-sm" onclick="cancelMyOrder(${ord.order_id}, '${ord.order_number}')" style="background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-size:0.82rem; padding:5px 12px; border-radius:6px; cursor:pointer;">✕ ขอยกเลิกคำสั่งซื้อ</button>
+                            </div>
+                        `;
+                    }
+                } else if (ord.status === 'confirmed') {
+                    orderBottomActions = `
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            ${ord.slip_image_url ? `<button type="button" class="btn btn-secondary btn-sm" onclick="viewSlipModal('${ord.slip_image_url || '/api/orders/' + ord.order_id + '/slip'}', '${ord.order_number}', ${ord.total_amount}, '${ord.payment_method}')" style="font-size:0.8rem; padding:4px 10px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🔍 ดูสลิป</button>` : ''}
+                            <span style="color:#10b981; font-size:0.8rem; font-weight:600;">✓ ชำระแล้วและอนุมัติสิทธิ์</span>
+                        </div>
+                    `;
+                } else if (ord.status === 'cancelled') {
+                    orderBottomActions = `
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <span style="color:var(--text-muted); font-size:0.82rem;">✕ คำสั่งซื้อนี้ถูกยกเลิกแล้ว</span>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openAttachSlipModal(${ord.order_id}, '${ord.order_number}', ${ord.total_amount})" style="font-size:0.78rem; padding:3px 10px; color:#38bdf8; border-color:rgba(56,189,248,0.3);">📤 แนบสลิปใหม่เพื่อสั่งซื้อต่อ</button>
+                        </div>
+                    `;
+                }
 
-    } catch (err) {
-        container.innerHTML = `<div style="color:var(--danger); padding:20px;">เกิดข้อผิดพลาด: ${err.message}</div>`;
+                ordCard.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+                        <div>
+                            <span style="font-size:1rem; font-weight:700; color:#38bdf8;">${ord.order_number}</span>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">สั่งซื้อเมื่อ: ${ord.created_at}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span class="status-badge ${statusBadgeClass}">${statusLabel}</span>
+                            <div style="font-size:1.15rem; font-weight:bold; color:var(--text-primary); margin-top:4px;">ยอดรวม: ฿${parseFloat(ord.total_amount).toFixed(2)}</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:8px;">
+                        ${itemsHtml}
+                    </div>
+
+                    <div style="font-size:0.85rem; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); flex-wrap:wrap; gap:8px;">
+                        <span>ช่องทาง: ${ord.payment_method === 'promptpay_qr' ? 'PromptPay QR' : 'โอนเงิน'}</span>
+                        ${orderBottomActions}
+                    </div>
+                `;
+                container.appendChild(ordCard);
+            });
+
+        } catch (err) {
+            container.innerHTML = `<div style="color:var(--danger); padding:20px;">เกิดข้อผิดพลาด: ${err.message}</div>`;
+        }
     }
-}
+
+    // Customer cancels order
+    async function cancelMyOrder(orderId, orderNumber) {
+        if (!confirm(`คุณต้องการยกเลิกคำสั่งซื้อ "${orderNumber}" ใช่หรือไม่?\n\n(หากยกเลิกแล้ว สถานะคำสั่งซื้อจะเปลี่ยนเป็น "ยกเลิกแล้ว")`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/orders/${orderId}/cancel`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-user-id': currentUserId 
+                }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast('✓ ' + (data.message || 'ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว'));
+                loadMyOrders();
+            } else {
+                showToast(data.error || 'ไม่สามารถยกเลิกคำสั่งซื้อได้', 'error');
+            }
+        } catch (err) {
+            showToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+        }
+    }
+
+    // Modal Attach / Edit Slip Functions
+    let currentAttachOrderId = null;
+    let currentAttachOrderNumber = '';
+    let currentAttachTotalAmount = 0;
+    let attachMockSlipUrl = null;
+
+    function openAttachSlipModal(orderId, orderNumber, totalAmount) {
+        currentAttachOrderId = orderId;
+        currentAttachOrderNumber = orderNumber;
+        currentAttachTotalAmount = parseFloat(totalAmount) || 0;
+        attachMockSlipUrl = null;
+
+        document.getElementById('attach-slip-order-num').textContent = orderNumber;
+        document.getElementById('attach-slip-amount').textContent = `฿${currentAttachTotalAmount.toFixed(2)}`;
+        document.getElementById('attach-qr-amount').textContent = `฿${currentAttachTotalAmount.toFixed(2)}`;
+
+        const fileInput = document.getElementById('attach-slip-file-input');
+        if (fileInput) fileInput.value = '';
+
+        const status = document.getElementById('attach-slip-status');
+        if (status) {
+            status.style.display = 'none';
+            status.innerHTML = '';
+        }
+
+        const container = document.getElementById('attach-slip-preview-container');
+        if (container) container.style.display = 'none';
+
+        const previewImg = document.getElementById('attach-slip-preview-img');
+        if (previewImg) previewImg.src = '';
+
+        const btnQuick = document.getElementById('btn-attach-quick-slip');
+        if (btnQuick) {
+            btnQuick.style.background = 'rgba(99,102,241,0.15)';
+            btnQuick.style.borderColor = 'var(--primary)';
+            btnQuick.style.color = '#a5b4fc';
+        }
+
+        document.getElementById('attach-slip-modal').classList.add('active');
+    }
+
+    function closeAttachSlipModal() {
+        document.getElementById('attach-slip-modal').classList.remove('active');
+        currentAttachOrderId = null;
+        attachMockSlipUrl = null;
+    }
+
+    function useAttachMockSlip() {
+        const timestamp = Date.now();
+        attachMockSlipUrl = `/api/slips/preview?amount=${encodeURIComponent(currentAttachTotalAmount)}&name=${encodeURIComponent(currentUserName || 'ลูกค้า EBOOK_ONLINE')}&order_number=${encodeURIComponent(currentAttachOrderNumber)}&method=promptpay_qr&t=${timestamp}`;
+
+        const fileInput = document.getElementById('attach-slip-file-input');
+        if (fileInput) fileInput.value = '';
+
+        const status = document.getElementById('attach-slip-status');
+        const container = document.getElementById('attach-slip-preview-container');
+        const previewImg = document.getElementById('attach-slip-preview-img');
+
+        if (previewImg) previewImg.src = attachMockSlipUrl;
+        if (container) container.style.display = 'block';
+
+        if (status) {
+            status.style.display = 'block';
+            status.style.background = 'rgba(16,185,129,0.12)';
+            status.style.border = '1px solid rgba(16,185,129,0.3)';
+            status.style.color = '#34d399';
+            status.innerHTML = `✓ แนบสลิปจำลองตรงตามยอด <strong>฿${currentAttachTotalAmount.toFixed(2)}</strong> เรียบร้อยแล้ว`;
+        }
+
+        const btnQuick = document.getElementById('btn-attach-quick-slip');
+        if (btnQuick) {
+            btnQuick.style.background = 'rgba(16,185,129,0.2)';
+            btnQuick.style.borderColor = '#10b981';
+            btnQuick.style.color = '#34d399';
+        }
+    }
+
+    function handleAttachSlipFileChange(input) {
+        if (input.files && input.files[0]) {
+            attachMockSlipUrl = null;
+            const file = input.files[0];
+            const status = document.getElementById('attach-slip-status');
+            const container = document.getElementById('attach-slip-preview-container');
+            const previewImg = document.getElementById('attach-slip-preview-img');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (previewImg && container) {
+                    previewImg.src = e.target.result;
+                    container.style.display = 'block';
+                }
+                if (status) {
+                    status.style.display = 'block';
+                    status.style.background = 'rgba(16,185,129,0.12)';
+                    status.style.border = '1px solid rgba(16,185,129,0.3)';
+                    status.style.color = '#34d399';
+                    status.innerHTML = `✓ แนบไฟล์รูป <strong>${file.name}</strong> เรียบร้อยแล้ว`;
+                }
+            };
+            reader.readAsDataURL(file);
+
+            const btnQuick = document.getElementById('btn-attach-quick-slip');
+            if (btnQuick) {
+                btnQuick.style.background = 'transparent';
+                btnQuick.style.borderColor = 'var(--border)';
+                btnQuick.style.color = 'var(--text-secondary)';
+            }
+        }
+    }
+
+    async function submitAttachSlip() {
+        if (!currentAttachOrderId) return;
+
+        const fileInput = document.getElementById('attach-slip-file-input');
+        const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+
+        if (!hasFile && !attachMockSlipUrl) {
+            showToast('กรุณากดแนบสลิปจำลอง หรือเลือกไฟล์รูปภาพก่อนบันทึก', 'error');
+            return;
+        }
+
+        const btnSubmit = document.getElementById('btn-submit-attach-slip');
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'กำลังส่งหลักฐาน... ⏳';
+
+        try {
+            const formData = new FormData();
+            formData.append('payment_method', 'promptpay_qr');
+
+            if (hasFile) {
+                formData.append('slip_image', fileInput.files[0]);
+                formData.append('note', 'แนบไฟล์สลิปเพิ่มเติมโดยลูกค้า');
+            } else {
+                formData.append('slip_mock_url', attachMockSlipUrl);
+                formData.append('note', 'แนบสลิปจำลองเพิ่มเติมโดยลูกค้า');
+            }
+
+            const res = await fetch(`/api/orders/${currentAttachOrderId}/payment`, {
+                method: 'POST',
+                headers: { 'x-user-id': currentUserId },
+                body: formData
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                showToast('✓ ' + (data.message || 'แนบสลิปชำระเงินเรียบร้อยแล้ว'));
+                closeAttachSlipModal();
+                loadMyOrders();
+            } else {
+                showToast(data.error || 'เกิดข้อผิดพลาดในการส่งสลิป', 'error');
+            }
+        } catch (err) {
+            showToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = 'บันทึกและส่งสลิป 🚀';
+        }
+    }
 
 // ====================================================================
 // User Profile Logic

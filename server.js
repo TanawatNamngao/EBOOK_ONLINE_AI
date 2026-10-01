@@ -757,7 +757,7 @@ app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) 
             `).run(payment_method || 'promptpay_qr', newPaymentStatus, order.total_amount, finalNote, orderId);
         }
 
-        db.prepare('UPDATE orders SET updated_at = CURRENT_TIMESTAMP WHERE order_id = ?').run(orderId);
+        db.prepare("UPDATE orders SET status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?").run(orderId);
 
         // Realtime sync to Supabase Cloud
         try {
@@ -769,6 +769,7 @@ app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) 
                 amount: order.total_amount,
                 note: finalNote
             });
+            supabaseSync.syncOrderStatusToSupabase(orderId, 'pending');
         } catch (e) {}
 
         res.json({ 
@@ -777,6 +778,45 @@ app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) 
             has_slip: !!slipUrl 
         });
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Customer/User cancels pending order
+app.put('/api/orders/:id/cancel', (req, res) => {
+    try {
+        const orderId = req.params.id;
+        const user = getCurrentUser(req);
+        
+        const order = db.prepare('SELECT * FROM orders WHERE order_id = ?').get(orderId);
+        if (!order) return res.status(404).json({ error: 'ไม่พบคำสั่งซื้อ' });
+
+        // Check ownership (if not admin)
+        if (user && user.role_id !== 2 && order.user_id !== user.user_id) {
+            return res.status(403).json({ error: 'ไม่มีสิทธิ์ยกเลิกคำสั่งซื้อนี้' });
+        }
+
+        if (order.status === 'confirmed') {
+            return res.status(400).json({ error: 'คำสั่งซื้อที่อนุมัติแล้วไม่สามารถยกเลิกได้' });
+        }
+
+        if (order.status === 'cancelled') {
+            return res.status(400).json({ error: 'คำสั่งซื้อนี้ถูกยกเลิกไปแล้ว' });
+        }
+
+        db.transaction(() => {
+            db.prepare("UPDATE orders SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?").run(orderId);
+            db.prepare("UPDATE payments SET payment_status = 'rejected', note = 'ลูกค้ายกเลิกคำสั่งซื้อ', verified_at = CURRENT_TIMESTAMP WHERE order_id = ?").run(orderId);
+        })();
+
+        // Sync to Supabase
+        try {
+            supabaseSync.syncOrderStatusToSupabase(orderId, 'cancelled');
+        } catch (e) {}
+
+        res.json({ message: 'ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว' });
+    } catch (err) {
+        console.error('Cancel order error:', err);
         res.status(500).json({ error: err.message });
     }
 });
