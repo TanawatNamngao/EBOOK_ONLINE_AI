@@ -67,6 +67,7 @@
 | **ภาคผนวก** | **24** |
 | &nbsp;&nbsp;&nbsp;&nbsp;ภาคผนวก ก: รายการตรวจสอบความพร้อมก่อนส่งงาน (Submission Checklist) | 24 |
 | &nbsp;&nbsp;&nbsp;&nbsp;ภาคผนวก ข: การเชื่อมโยงโครงงานกับวิชาวิศวกรรมซอฟต์แวร์ (SWE Inventory System) | 24 |
+| **บันทึกผู้สอน** | **25** |
 
 <div class="page-break"></div>
 
@@ -606,5 +607,35 @@ ORDER BY total_spent DESC;
 
 ## ภาคผนวก ข: การเชื่อมโยงโครงงานกับวิชาวิศวกรรมซอฟต์แวร์ (SWE Inventory System)
 โครงงานฝั่งฐานข้อมูลนี้ได้รับการจัดเก็บแยกเป็น Repository บน GitHub โดยเฉพาะ (`https://github.com/TanawatNamngao/EBOOK_ONLINE_AI`) เพื่อส่งให้อาจารย์ผู้สอนวิชาระบบฐานข้อมูล และได้ทำการเชื่อมโยงข้อมูลแนวคิดข้ามไปยังโครงงาน Inventory System ของวิชาวิศวกรรมซอฟต์แวร์ (SWE) อย่างถูกต้องตามแนวทางปฏิบัติของหลักสูตรวิศวกรรมคอมพิวเตอร์ มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น
+
+<div style="page-break-before: always;"></div>
+
+---
+
+# บันทึกผู้สอน
+
+<table class="eval-table" style="width: 100%; border-collapse: collapse; margin-top: 24px; border: 1.5px solid #244b7a;">
+    <thead>
+        <tr style="background-color: #244b7a; color: #ffffff;">
+            <th style="width: 25%; padding: 14px 16px; text-align: center; border: 1px solid #cbd5e1; color: #ffffff; background-color: #244b7a; font-size: 13pt;">หัวข้อ</th>
+            <th style="width: 75%; padding: 14px 16px; text-align: center; border: 1px solid #cbd5e1; color: #ffffff; background-color: #244b7a; font-size: 13pt;">บันทึก</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="title-col" style="padding: 30px 16px; font-weight: bold; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background-color: #ffffff; font-size: 12pt;">จุดที่ทำได้ดี</td>
+            <td class="blank-col" style="padding: 30px 16px; height: 180px; min-height: 180px; border: 1px solid #cbd5e1; background-color: #ffffff;">&nbsp;</td>
+        </tr>
+        <tr style="background-color: #f0f4f8;">
+            <td class="title-col" style="padding: 30px 16px; font-weight: bold; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background-color: #f0f4f8; font-size: 12pt;">ข้อเสนอแนะ</td>
+            <td class="blank-col" style="padding: 30px 16px; height: 180px; min-height: 180px; border: 1px solid #cbd5e1; background-color: #f0f4f8;">&nbsp;</td>
+        </tr>
+        <tr>
+            <td class="title-col" style="padding: 30px 16px; font-weight: bold; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background-color: #ffffff; font-size: 12pt;">คะแนนและหมายเหตุ</td>
+            <td class="blank-col" style="padding: 30px 16px; height: 180px; min-height: 180px; border: 1px solid #cbd5e1; background-color: #ffffff;">&nbsp;</td>
+        </tr>
+    </tbody>
+</table>
+
 
 

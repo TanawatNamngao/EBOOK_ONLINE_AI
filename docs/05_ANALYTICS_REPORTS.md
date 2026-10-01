@@ -166,3 +166,33 @@ ORDER BY total_spent DESC;
 
 ### 4.5 ข้อสรุปและการนำไปใช้ (Business Insight)
 * คำสั่ง SQL กรองเฉพาะคำสั่งซื้อที่ยืนยันการชำระเงินสำเร็จ (`status = 'confirmed'`) และจัดกลุ่มลูกค้าที่ซื้อซ้ำตั้งแต่ 2 ครั้งขึ้นไป (`HAVING COUNT >= 2`) พบว่ามีลูกค้าประจำกลุ่ม VIP มียอดซื้อสะสมเกิน 1,200 บาท ทางร้านสามารถนำรายชื่อนี้ไปมอบสิทธิพิเศษ Loyalty Reward เพื่อรักษาฐานลูกค้าได้อย่างมีประสิทธิภาพ
+
+<div style="page-break-before: always;"></div>
+
+---
+
+# บันทึกผู้สอน
+
+<table class="eval-table" style="width: 100%; border-collapse: collapse; margin-top: 24px; border: 1.5px solid #244b7a;">
+    <thead>
+        <tr style="background-color: #244b7a; color: #ffffff;">
+            <th style="width: 25%; padding: 14px 16px; text-align: center; border: 1px solid #cbd5e1; color: #ffffff; background-color: #244b7a; font-size: 13pt;">หัวข้อ</th>
+            <th style="width: 75%; padding: 14px 16px; text-align: center; border: 1px solid #cbd5e1; color: #ffffff; background-color: #244b7a; font-size: 13pt;">บันทึก</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="title-col" style="padding: 30px 16px; font-weight: bold; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background-color: #ffffff; font-size: 12pt;">จุดที่ทำได้ดี</td>
+            <td class="blank-col" style="padding: 30px 16px; height: 180px; min-height: 180px; border: 1px solid #cbd5e1; background-color: #ffffff;">&nbsp;</td>
+        </tr>
+        <tr style="background-color: #f0f4f8;">
+            <td class="title-col" style="padding: 30px 16px; font-weight: bold; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background-color: #f0f4f8; font-size: 12pt;">ข้อเสนอแนะ</td>
+            <td class="blank-col" style="padding: 30px 16px; height: 180px; min-height: 180px; border: 1px solid #cbd5e1; background-color: #f0f4f8;">&nbsp;</td>
+        </tr>
+        <tr>
+            <td class="title-col" style="padding: 30px 16px; font-weight: bold; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background-color: #ffffff; font-size: 12pt;">คะแนนและหมายเหตุ</td>
+            <td class="blank-col" style="padding: 30px 16px; height: 180px; min-height: 180px; border: 1px solid #cbd5e1; background-color: #ffffff;">&nbsp;</td>
+        </tr>
+    </tbody>
+</table>
+
