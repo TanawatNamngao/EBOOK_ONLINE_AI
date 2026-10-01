@@ -1307,24 +1307,39 @@ app.delete('/api/admin/ebooks/:id', async (req, res) => {
 });
 
 // Admin Categories Management
-app.post('/api/admin/categories', (req, res) => {
+app.post('/api/admin/categories', async (req, res) => {
     try {
         const { name, slug, description } = req.body;
-        if (!name) return res.status(400).json({ error: 'กรุณาระบุชื่อหมวดหมู่' });
-        const autoSlug = slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+        if (!name || !name.trim()) return res.status(400).json({ error: 'กรุณาระบุชื่อหมวดหมู่' });
+        const cleanName = name.trim();
+        const autoSlug = (slug && slug.trim()) ? slug.trim() : cleanName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || `cat-${Date.now()}`;
         
         const result = db.prepare(`
             INSERT INTO categories (name, slug, description, is_active)
             VALUES (?, ?, ?, 1)
-        `).run(name, autoSlug, description || null);
+        `).run(cleanName, autoSlug, description ? description.trim() : null);
 
-        res.status(201).json({ message: 'เพิ่มหมวดหมู่สำเร็จ', category_id: result.lastInsertRowid });
+        const newCatId = result.lastInsertRowid;
+
+        // Sync to Supabase
+        try {
+            await supabaseSync.pool.query(`
+                INSERT INTO categories (category_id, name, slug, description, is_active)
+                VALUES ($1, $2, $3, $4, 1)
+                ON CONFLICT (category_id) DO UPDATE SET
+                    name = EXCLUDED.name, slug = EXCLUDED.slug, description = EXCLUDED.description, is_active = EXCLUDED.is_active;
+            `, [newCatId, cleanName, autoSlug, description ? description.trim() : null]);
+        } catch (syncErr) {
+            console.warn('⚠️ Supabase category sync note:', syncErr.message);
+        }
+
+        res.status(201).json({ message: 'เพิ่มหมวดหมู่สำเร็จ', category_id: newCatId });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.put('/api/admin/categories/:id', (req, res) => {
+app.put('/api/admin/categories/:id', async (req, res) => {
     try {
         const { name, description, is_active } = req.body;
         db.prepare(`
@@ -1334,6 +1349,16 @@ app.put('/api/admin/categories/:id', (req, res) => {
                 is_active = COALESCE(?, is_active)
             WHERE category_id = ?
         `).run(name, description, is_active, req.params.id);
+
+        try {
+            await supabaseSync.pool.query(`
+                UPDATE categories 
+                SET name = COALESCE($1, name),
+                    description = COALESCE($2, description),
+                    is_active = COALESCE($3, is_active)
+                WHERE category_id = $4
+            `, [name || null, description || null, is_active !== undefined ? is_active : null, req.params.id]);
+        } catch (syncErr) {}
 
         res.json({ message: 'แก้ไขหมวดหมู่สำเร็จ' });
     } catch (err) {

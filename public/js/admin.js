@@ -512,10 +512,26 @@ async function loadAuthorsAndCategories() {
         const catSelect = document.getElementById('new-book-category');
         if (catSelect) catSelect.innerHTML = allAdminCategories.map(c => `<option value="${c.category_id}">${c.name}</option>`).join('');
 
+        const editCatSelect = document.getElementById('edit-book-category');
+        if (editCatSelect) {
+            const currentCatVal = editCatSelect.value;
+            editCatSelect.innerHTML = allAdminCategories.map(c => 
+                `<option value="${c.category_id}" ${c.category_id == currentCatVal ? 'selected' : ''}>${c.name}</option>`
+            ).join('');
+        }
+
         const authRes = await fetch('/api/admin/authors');
         allAdminAuthors = await authRes.json();
         const authSelect = document.getElementById('new-book-author');
         if (authSelect) authSelect.innerHTML = allAdminAuthors.map(a => `<option value="${a.author_id}">${a.name}</option>`).join('');
+
+        const editAuthSelect = document.getElementById('edit-book-author');
+        if (editAuthSelect) {
+            const currentAuthVal = editAuthSelect.value;
+            editAuthSelect.innerHTML = allAdminAuthors.map(a => 
+                `<option value="${a.author_id}" ${a.author_id == currentAuthVal ? 'selected' : ''}>${a.name}</option>`
+            ).join('');
+        }
 
         loadAdminAuthorsTable();
     } catch (err) {
@@ -1012,11 +1028,16 @@ async function loadAdminCategories() {
     }
 }
 
-function openAddCategoryModal() {
+let targetCategorySelectId = null;
+
+function openAddCategoryModal(targetSelectId = null) {
+    targetCategorySelectId = targetSelectId;
     document.getElementById('add-category-modal').classList.add('active');
 }
 function closeAddCategoryModal() {
     document.getElementById('add-category-modal').classList.remove('active');
+    document.getElementById('add-category-form').reset();
+    targetCategorySelectId = null;
 }
 
 async function submitNewCategory(e) {
@@ -1035,9 +1056,16 @@ async function submitNewCategory(e) {
         if (res.ok) {
             showToast('✓ เพิ่มหมวดหมู่หนังสือสำเร็จ');
             closeAddCategoryModal();
-            loadAdminCategories();
-            loadAuthorsAndCategories();
-            document.getElementById('add-category-form').reset();
+            await loadAdminCategories();
+            await loadAuthorsAndCategories();
+
+            // Auto-select the newly created category in the active book dropdown
+            if (targetCategorySelectId && data.category_id) {
+                const selectEl = document.getElementById(targetCategorySelectId);
+                if (selectEl) {
+                    selectEl.value = data.category_id;
+                }
+            }
         } else {
             showToast(data.error || 'เกิดข้อผิดพลาด', 'error');
         }

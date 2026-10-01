@@ -590,7 +590,10 @@ ORDER BY total_spent DESC;
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
                     <div>
-                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">หมวดหมู่ *</label>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="font-size:0.88rem;">หมวดหมู่ *</label>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openAddCategoryModal('new-book-category')" style="font-size:0.75rem; padding:2px 8px; border-radius:4px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">+ เพิ่มหมวดหมู่ใหม่</button>
+                        </div>
                         <select id="new-book-category" required class="sort-select" style="width:100%;">
                             <!-- Loaded via JS -->
                         </select>
@@ -660,7 +663,10 @@ ORDER BY total_spent DESC;
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
                     <div>
-                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">หมวดหมู่ *</label>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="font-size:0.88rem;">หมวดหมู่ *</label>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openAddCategoryModal('edit-book-category')" style="font-size:0.75rem; padding:2px 8px; border-radius:4px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">+ เพิ่มหมวดหมู่ใหม่</button>
+                        </div>
                         <select id="edit-book-category" required class="sort-select" style="width:100%;">
                             <!-- Loaded via JS -->
                         </select>
@@ -719,7 +725,7 @@ ORDER BY total_spent DESC;
     </div>
 
     <!-- Add Category Modal (ตรงตามข้อ 3: เพิ่มหมวดหมู่) -->
-    <div class="modal-overlay" id="add-category-modal">
+    <div class="modal-overlay" id="add-category-modal" style="z-index: 220;">
         <div class="modal-card" style="max-width:500px;">
             <button class="modal-close" onclick="closeAddCategoryModal()">✕</button>
             <h2 style="font-size:1.3rem; margin-bottom:16px;">เพิ่มหมวดหมู่หนังสือใหม่</h2>
@@ -767,6 +773,6 @@ ORDER BY total_spent DESC;
     <!-- Toast Notification -->
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="/js/admin.js?v=20261001_v7"></script>
+    <script src="/js/admin.js?v=20261001_v8"></script>
 </body>
 </html>
