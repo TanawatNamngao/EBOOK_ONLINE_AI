@@ -13,7 +13,8 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Static Files with custom headers for SVG/Slip images and cache management
 app.use(express.static(path.join(__dirname, 'public'), {
     setHeaders: (res, filePath) => {
@@ -63,7 +64,7 @@ const slipStorage = multer.diskStorage({
         cb(null, `slip_upload_${unique}${ext}`);
     }
 });
-const uploadSlip = multer({ storage: slipStorage });
+const uploadSlip = multer({ storage: slipStorage, limits: { fileSize: 15 * 1024 * 1024 } });
 
 // Configure Multer for E-Book uploads (Cover Image & PDF File)
 const ebookStorage = multer.diskStorage({
@@ -88,7 +89,7 @@ const ebookStorage = multer.diskStorage({
         }
     }
 });
-const uploadEbookFiles = multer({ storage: ebookStorage });
+const uploadEbookFiles = multer({ storage: ebookStorage, limits: { fileSize: 30 * 1024 * 1024 } });
 const uploadCover = uploadEbookFiles; // backwards compatibility alias
 
 // Route for Auth Page
@@ -742,7 +743,14 @@ app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) 
 
         // If file or slip_mock_url provided:
         if (req.file) {
-            slipUrl = `/assets/slips/${req.file.filename}`;
+            try {
+                const b64 = fs.readFileSync(req.file.path, 'base64');
+                slipUrl = `data:${req.file.mimetype || 'image/jpeg'};base64,${b64}`;
+                try { fs.unlinkSync(req.file.path); } catch (e) {}
+            } catch (fileErr) {
+                console.error('⚠️ Error reading slip file to base64:', fileErr);
+                slipUrl = `/assets/slips/${req.file.filename}`;
+            }
         } else if (slip_mock_url) {
             // Generate customized dynamic SVG slip matching the EXACT order total amount & customer name!
             slipUrl = createSlipFileForOrder({
@@ -1115,7 +1123,15 @@ app.post('/api/admin/ebooks', uploadEbookFiles.fields([{ name: 'cover_file', max
 
         let finalCover = '/assets/covers/default.svg';
         if (req.files && req.files['cover_file'] && req.files['cover_file'][0]) {
-            finalCover = `/assets/covers/${req.files['cover_file'][0].filename}`;
+            const f = req.files['cover_file'][0];
+            try {
+                const b64 = fs.readFileSync(f.path, 'base64');
+                finalCover = `data:${f.mimetype || 'image/jpeg'};base64,${b64}`;
+                try { fs.unlinkSync(f.path); } catch (e) {}
+            } catch (coverErr) {
+                console.error('⚠️ Error reading cover file to base64:', coverErr);
+                finalCover = `/assets/covers/${f.filename}`;
+            }
         } else if (cover_image && cover_image.trim()) {
             finalCover = cover_image.trim();
         }
@@ -1167,9 +1183,17 @@ app.put('/api/admin/ebooks/:id', uploadEbookFiles.fields([{ name: 'cover_file', 
     try {
         const { category_id, author_id, title, isbn, description, price, cover_image, is_published, full_file_url } = req.body;
         
-        let finalCover = cover_image || null;
+        let finalCover = cover_image ? cover_image.trim() : null;
         if (req.files && req.files['cover_file'] && req.files['cover_file'][0]) {
-            finalCover = `/assets/covers/${req.files['cover_file'][0].filename}`;
+            const f = req.files['cover_file'][0];
+            try {
+                const b64 = fs.readFileSync(f.path, 'base64');
+                finalCover = `data:${f.mimetype || 'image/jpeg'};base64,${b64}`;
+                try { fs.unlinkSync(f.path); } catch (e) {}
+            } catch (coverErr) {
+                console.error('⚠️ Error reading cover file to base64:', coverErr);
+                finalCover = `/assets/covers/${f.filename}`;
+            }
         }
 
         let finalPdf = full_file_url ? full_file_url.trim() : null;

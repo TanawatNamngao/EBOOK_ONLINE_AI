@@ -242,6 +242,47 @@ function escapeAttr(str) {
     return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
+// Compress image to lightweight JPEG before uploading
+function compressImage(file, maxWidth = 800, maxHeight = 1200, quality = 0.85) {
+    return new Promise((resolve) => {
+        if (!file || !file.type || !file.type.startsWith('image/')) {
+            return resolve(file);
+        }
+        if (file.type === 'image/svg+xml') {
+            return resolve(file);
+        }
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.onload = () => {
+                let { width, height } = img;
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
+                        resolve(compressedFile);
+                    } else {
+                        resolve(file);
+                    }
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = () => resolve(file);
+            img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(file);
+        reader.readAsDataURL(file);
+    });
+}
+
 async function fetchEbooks() {
     const grid = document.getElementById('books-grid');
     const countLabel = document.getElementById('catalog-count-label');
@@ -801,7 +842,8 @@ async function submitOrderAndPayment() {
             formData.append('skip_slip', 'true');
             formData.append('note', 'สั่งซื้อโดยยังไม่ได้แนบสลิป (ค้างชำระ/ตัวอย่างยกเลิก)');
         } else if (fileInput.files.length > 0) {
-            formData.append('slip_image', fileInput.files[0]);
+            const compressedSlip = await compressImage(fileInput.files[0]);
+            formData.append('slip_image', compressedSlip);
             formData.append('note', 'แนบไฟล์สลิปจริงผ่านหน้าร้าน');
         } else {
             formData.append('slip_mock_url', activeMockSlipUrl);
@@ -1162,7 +1204,8 @@ async function loadMyOrders() {
             formData.append('payment_method', 'promptpay_qr');
 
             if (hasFile) {
-                formData.append('slip_image', fileInput.files[0]);
+                const compressedSlip = await compressImage(fileInput.files[0]);
+                formData.append('slip_image', compressedSlip);
                 formData.append('note', 'แนบไฟล์สลิปเพิ่มเติมโดยลูกค้า');
             } else {
                 formData.append('slip_mock_url', attachMockSlipUrl);

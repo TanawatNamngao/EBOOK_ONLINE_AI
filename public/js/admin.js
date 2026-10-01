@@ -634,6 +634,47 @@ async function deleteAuthor(authorId, authorName, bookCount) {
     }
 }
 
+// Helper to compress an image file to a lightweight JPEG Blob before uploading
+function compressImage(file, maxWidth = 800, maxHeight = 1200, quality = 0.85) {
+    return new Promise((resolve) => {
+        if (!file || !file.type || !file.type.startsWith('image/')) {
+            return resolve(file);
+        }
+        if (file.type === 'image/svg+xml') {
+            return resolve(file);
+        }
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.onload = () => {
+                let { width, height } = img;
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
+                        resolve(compressedFile);
+                    } else {
+                        resolve(file);
+                    }
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = () => resolve(file);
+            img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(file);
+        reader.readAsDataURL(file);
+    });
+}
+
 function openAddEbookModal() {
     document.getElementById('add-ebook-modal').classList.add('active');
 }
@@ -672,7 +713,8 @@ async function submitNewEbook(e) {
     }
 
     if (fileInput && fileInput.files && fileInput.files[0]) {
-        formData.append('cover_file', fileInput.files[0]);
+        const compressed = await compressImage(fileInput.files[0]);
+        formData.append('cover_file', compressed);
     } else if (coverUrlInput && coverUrlInput.value.trim()) {
         formData.append('cover_image', coverUrlInput.value.trim());
     } else {
@@ -948,7 +990,8 @@ async function submitEditEbook(e) {
     }
 
     if (fileInput && fileInput.files && fileInput.files[0]) {
-        formData.append('cover_file', fileInput.files[0]);
+        const compressed = await compressImage(fileInput.files[0]);
+        formData.append('cover_file', compressed);
     } else if (coverUrlInput && coverUrlInput.value.trim()) {
         formData.append('cover_image', coverUrlInput.value.trim());
     }
