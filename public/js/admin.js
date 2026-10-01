@@ -754,22 +754,27 @@ async function loadAllReports() {
     loadReport4();
 }
 
-// รายงานที่ 1: สรุปยอดขายและจำนวนเล่มที่ขายได้ของหนังสือแต่ละเล่ม
+// รายงานที่ 1: ยอดขายตามช่วงเวลา (Sales Over Time)
 async function loadReport1() {
     try {
-        const res = await fetch('/api/admin/reports/sales-by-book');
+        const res = await fetch('/api/admin/reports/sales-over-time');
         const data = await res.json();
         const tbody = document.querySelector('#report1-table tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
 
-        data.forEach((row, idx) => {
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่มีข้อมูลยอดขายในช่วงเวลาที่เลือก</td></tr>';
+            return;
+        }
+
+        data.forEach((row) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong>${idx + 1}</strong></td>
-                <td><strong>${row.title}</strong></td>
-                <td><strong style="color:#f59e0b; font-size:1.05rem;">${row.total_sold} เล่ม</strong></td>
+                <td><strong style="color:#38bdf8;">📅 ${row.sales_date}</strong></td>
+                <td><strong style="color:#f59e0b; font-size:1.05rem;">${row.total_orders} คำสั่งซื้อ</strong></td>
                 <td><strong style="color:#10b981; font-size:1.05rem;">฿${parseFloat(row.total_sales).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
+                <td><strong style="color:#a855f7; font-size:1.05rem;">฿${parseFloat(row.avg_order_value).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
             `;
             tbody.appendChild(tr);
         });
@@ -778,23 +783,29 @@ async function loadReport1() {
     }
 }
 
-// รายงานที่ 2: จัดอันดับ E-Book ขายดีที่สุด 3 อันดับแรก (Top 3 Bestsellers)
+// รายงานที่ 2: E Book ขายดี (Bestselling E-Books)
 async function loadReport2() {
     try {
-        const res = await fetch('/api/admin/reports/best-sellers-top3');
+        const res = await fetch('/api/admin/reports/best-sellers');
         const data = await res.json();
         const tbody = document.querySelector('#report2-table tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
 
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบข้อมูลหนังสือขายดี</td></tr>';
+            return;
+        }
+
         data.forEach((b, index) => {
             const tr = document.createElement('tr');
-            const medal = index === 0 ? '🥇 อันดับ 1' : (index === 1 ? '🥈 อันดับ 2' : '🥉 อันดับ 3');
-            const medalColor = index === 0 ? '#f59e0b' : (index === 1 ? '#94a3b8' : '#d97706');
+            const medal = index === 0 ? '🥇 อันดับ 1' : (index === 1 ? '🥈 อันดับ 2' : (index === 2 ? '🥉 อันดับ 3' : `อันดับ ${index + 1}`));
+            const medalColor = index === 0 ? '#f59e0b' : (index === 1 ? '#94a3b8' : (index === 2 ? '#d97706' : '#cbd5e1'));
             tr.innerHTML = `
                 <td><strong style="color:${medalColor}; font-size:1.05rem;">${medal}</strong></td>
                 <td><strong>${b.title}</strong></td>
-                <td><strong style="color:#10b981; font-size:1.15rem;">${b.total_sold} เล่ม</strong></td>
+                <td><strong style="color:#f59e0b; font-size:1.05rem;">${b.total_sold} เล่ม</strong></td>
+                <td><strong style="color:#10b981; font-size:1.05rem;">฿${parseFloat(b.total_sales).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
             `;
             tbody.appendChild(tr);
         });
@@ -803,29 +814,27 @@ async function loadReport2() {
     }
 }
 
-// รายงานที่ 3: สรุปประสิทธิภาพช่องทางชำระเงินและยอดเฉลี่ยต่อบิล
+// รายงานที่ 3: ยอดขายตามหมวดหมู่ (Sales by Category)
 async function loadReport3() {
     try {
-        const res = await fetch('/api/admin/reports/payment-methods');
+        const res = await fetch('/api/admin/reports/sales-by-category');
         const data = await res.json();
         const tbody = document.querySelector('#report3-table tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
 
-        const methodNames = {
-            'promptpay_qr': '📱 PromptPay QR (พร้อมเพย์)',
-            'bank_transfer': '🏦 โอนผ่านธนาคาร (Bank Transfer)',
-            'mock_gateway': '💳 บัตรเครดิต/เกตเวย์จำลอง'
-        };
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบข้อมูลยอดขายตามหมวดหมู่</td></tr>';
+            return;
+        }
 
-        data.forEach(m => {
+        data.forEach((c, idx) => {
             const tr = document.createElement('tr');
-            const name = methodNames[m.payment_method] || m.payment_method;
             tr.innerHTML = `
-                <td><strong>${name}</strong></td>
-                <td>${m.total_orders} ออเดอร์</td>
-                <td><strong style="color:#10b981;">฿${parseFloat(m.total_sales).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
-                <td><strong style="color:#38bdf8;">฿${parseFloat(m.avg_sales).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
+                <td><strong>${idx + 1}</strong></td>
+                <td><span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:4px 10px; border-radius:6px; font-weight:600;">🏷️ ${c.category_name}</span></td>
+                <td><strong style="color:#f59e0b; font-size:1.05rem;">${c.total_items_sold} รายการ</strong></td>
+                <td><strong style="color:#10b981; font-size:1.05rem;">฿${parseFloat(c.total_sales).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
             `;
             tbody.appendChild(tr);
         });
@@ -834,21 +843,29 @@ async function loadReport3() {
     }
 }
 
-// รายงานที่ 4: ค้นหาลูกค้าประจำที่ซื้อตั้งแต่ 2 ครั้งขึ้นไป (Customer Insights)
+// รายงานที่ 4: ลูกค้าและคำสั่งซื้อ (Customers & Orders)
 async function loadReport4() {
     try {
-        const res = await fetch('/api/admin/reports/repeat-customers');
+        const res = await fetch('/api/admin/reports/customer-orders');
         const data = await res.json();
         const tbody = document.querySelector('#report4-table tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
 
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบข้อมูลลูกค้าและคำสั่งซื้อ</td></tr>';
+            return;
+        }
+
         data.forEach((u, idx) => {
             const tr = document.createElement('tr');
+            const statusLabel = u.status === 'confirmed' ? '✓ สำเร็จ (Confirmed)' : (u.status === 'pending' ? '⏳ รอชำระ (Pending)' : '❌ ยกเลิก (Cancelled)');
+            const statusClass = u.status === 'confirmed' ? 'status-confirmed' : (u.status === 'pending' ? 'status-pending' : 'status-cancelled');
             tr.innerHTML = `
                 <td><strong>${idx + 1}</strong></td>
-                <td><strong>${u.full_name}</strong></td>
-                <td><span class="status-badge status-confirmed">${u.total_orders} ครั้ง</span></td>
+                <td><strong>👤 ${u.full_name}</strong></td>
+                <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                <td><strong style="color:#f59e0b; font-size:1.05rem;">${u.total_orders} ครั้ง</strong></td>
                 <td><strong style="color:#10b981; font-size:1.05rem;">฿${parseFloat(u.total_spent).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong></td>
             `;
             tbody.appendChild(tr);

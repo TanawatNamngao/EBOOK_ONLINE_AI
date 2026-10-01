@@ -299,16 +299,16 @@
                 <!-- Report Tabs -->
                 <div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;">
                     <button class="btn btn-primary btn-sm report-nav-btn active" onclick="switchReportTab(1, this)">
-                        1. ยอดขายตามชื่อหนังสือ (SUM, COUNT)
+                        1. ยอดขายตามช่วงเวลา (JOIN, SUM, AVG)
                     </button>
                     <button class="btn btn-secondary btn-sm report-nav-btn" onclick="switchReportTab(2, this)">
-                        2. 3 อันดับ E-Book ขายดี (LIMIT 3)
+                        2. E Book ขายดี (COUNT, LIMIT)
                     </button>
                     <button class="btn btn-secondary btn-sm report-nav-btn" onclick="switchReportTab(3, this)">
-                        3. สรุปช่องทางชำระเงิน (AVG)
+                        3. ยอดขายตามหมวดหมู่ (JOIN หลายตาราง, SUM)
                     </button>
                     <button class="btn btn-secondary btn-sm report-nav-btn" onclick="switchReportTab(4, this)">
-                        4. ลูกค้าประจำซื้อ >= 2 ครั้ง (HAVING)
+                        4. ลูกค้าและคำสั่งซื้อ (HAVING, เงื่อนไขสถานะ)
                     </button>
                 </div>
 
@@ -317,16 +317,16 @@
                     <div class="data-table-card">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                             <div>
-                                <h2 style="font-size:1.35rem;">รายงานที่ 1: สรุปยอดขายและจำนวนเล่มที่ขายได้ของหนังสือแต่ละเล่ม</h2>
+                                <h2 style="font-size:1.35rem;">รายงานที่ 1: ยอดขายตามช่วงเวลา (Sales Over Time)</h2>
                                 <p style="color:var(--text-secondary); font-size:0.88rem; margin-top:4px;">
-                                    <strong>คำถามที่ตอบ:</strong> ดูว่าหนังสือแต่ละเล่มขายได้กี่เล่ม และได้เงินรวมเท่าไหร่?
+                                    <strong>คำถามที่ต้องตอบ:</strong> ยอดขาย จำนวนคำสั่งซื้อ และค่าเฉลี่ยต่อคำสั่งซื้อ เปลี่ยนไปอย่างไรตามวันที่หรือเดือน
                                 </p>
                                 <div style="font-size:0.82rem; color:#a5b4fc; margin-top:4px;">
-                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายธนวัฒน์ นามเหง้า (67332110293-4)
+                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายธนวัฒน์ นามเหง้า (67332110293-4) | <strong>สิ่งที่ควรใช้ใน SQL:</strong> JOIN GROUP BY SUM COUNT AVG และตัวกรองวัน
                                 </div>
                             </div>
                             <div style="display:flex; gap:8px;">
-                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(1, 'sales_by_book')">📥 Export CSV</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(1, 'sales_over_time')">📥 Export CSV</button>
                                 <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ พิมพ์รายงาน</button>
                             </div>
                         </div>
@@ -336,10 +336,10 @@
                             <table class="admin-table" id="report1-table">
                                 <thead>
                                     <tr>
-                                        <th style="width:70px;">ลำดับ</th>
-                                        <th>ชื่อเรื่อง E-Book</th>
-                                        <th style="width:180px;">จำนวนเล่มที่ขายได้</th>
+                                        <th style="width:160px;">วันที่ (sales_date)</th>
+                                        <th style="width:180px;">จำนวนคำสั่งซื้อ</th>
                                         <th style="width:200px;">ยอดขายรวม (บาท)</th>
+                                        <th style="width:220px;">ค่าเฉลี่ยต่อคำสั่งซื้อ (บาท)</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -348,16 +348,19 @@
 
                         <!-- Academic SQL Accordion -->
                         <details class="sql-accordion" open>
-                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, COUNT, SUM, ORDER BY)</summary>
+                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, SUM, COUNT, AVG, ตัวกรองวัน)</summary>
                             <pre class="sql-code-block">
 SELECT 
-    ebooks.title,
-    COUNT(order_items.order_item_id) AS total_sold,
-    SUM(order_items.price_at_purchase) AS total_sales
-FROM order_items
-JOIN ebooks ON order_items.ebook_id = ebooks.ebook_id
-GROUP BY ebooks.title
-ORDER BY total_sales DESC;
+    DATE(orders.created_at) AS sales_date,
+    COUNT(orders.order_id) AS total_orders,
+    SUM(orders.total_amount) AS total_sales,
+    ROUND(AVG(orders.total_amount), 2) AS avg_order_value
+FROM orders
+JOIN payments ON orders.order_id = payments.order_id
+WHERE orders.status = 'confirmed' 
+  AND orders.created_at >= '2026-01-01'
+GROUP BY DATE(orders.created_at)
+ORDER BY sales_date DESC;
                             </pre>
                         </details>
                     </div>
@@ -368,16 +371,16 @@ ORDER BY total_sales DESC;
                     <div class="data-table-card">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                             <div>
-                                <h2 style="font-size:1.35rem;">รายงานที่ 2: จัดอันดับ E-Book ขายดีที่สุด 3 อันดับแรก (Top 3 Bestsellers)</h2>
+                                <h2 style="font-size:1.35rem;">รายงานที่ 2: E Book ขายดี (Bestselling E-Books)</h2>
                                 <p style="color:var(--text-secondary); font-size:0.88rem; margin-top:4px;">
-                                    <strong>คำถามที่ตอบ:</strong> หาหนังสือ 3 อันดับแรกที่มียอดสั่งซื้อสูงสุดไปจัดโปรโมชันหน้าร้าน?
+                                    <strong>คำถามที่ต้องตอบ:</strong> E Book ใดขายได้มากที่สุดตามจำนวนเล่มหรือยอดขาย
                                 </p>
                                 <div style="font-size:0.82rem; color:#a5b4fc; margin-top:4px;">
-                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายธนวัฒน์ นามเหง้า (67332110293-4)
+                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายธนวัฒน์ นามเหง้า (67332110293-4) | <strong>สิ่งที่ควรใช้ใน SQL:</strong> JOIN GROUP BY SUM หรือ COUNT และ LIMIT
                                 </div>
                             </div>
                             <div style="display:flex; gap:8px;">
-                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(2, 'best_sellers_top3')">📥 Export CSV</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(2, 'best_sellers')">📥 Export CSV</button>
                                 <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ พิมพ์รายงาน</button>
                             </div>
                         </div>
@@ -388,7 +391,8 @@ ORDER BY total_sales DESC;
                                     <tr>
                                         <th style="width:140px;">อันดับ</th>
                                         <th>ชื่อเรื่อง E-Book</th>
-                                        <th style="width:200px;">จำนวนเล่มที่ขายได้</th>
+                                        <th style="width:180px;">จำนวนเล่มที่ขายได้</th>
+                                        <th style="width:200px;">ยอดขายรวม (บาท)</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -396,16 +400,17 @@ ORDER BY total_sales DESC;
                         </div>
 
                         <details class="sql-accordion" open>
-                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, COUNT, ORDER BY, LIMIT)</summary>
+                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, SUM หรือ COUNT และ LIMIT)</summary>
                             <pre class="sql-code-block">
 SELECT 
     ebooks.title,
-    COUNT(order_items.order_item_id) AS total_sold
+    COUNT(order_items.order_item_id) AS total_sold,
+    SUM(order_items.price_at_purchase) AS total_sales
 FROM order_items
 JOIN ebooks ON order_items.ebook_id = ebooks.ebook_id
 GROUP BY ebooks.title
 ORDER BY total_sold DESC
-LIMIT 3;
+LIMIT 5;
                             </pre>
                         </details>
                     </div>
@@ -416,16 +421,16 @@ LIMIT 3;
                     <div class="data-table-card">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                             <div>
-                                <h2 style="font-size:1.35rem;">รายงานที่ 3: สรุปประสิทธิภาพช่องทางชำระเงินและยอดเฉลี่ยต่อบิล</h2>
+                                <h2 style="font-size:1.35rem;">รายงานที่ 3: ยอดขายตามหมวดหมู่ (Sales by Category)</h2>
                                 <p style="color:var(--text-secondary); font-size:0.88rem; margin-top:4px;">
-                                    <strong>คำถามที่ตอบ:</strong> ดูว่าลูกค้าชอบจ่ายเงินทางไหนมากที่สุด และเฉลี่ยบิลละกี่บาท?
+                                    <strong>คำถามที่ต้องตอบ:</strong> หมวดหมู่ใดสร้างยอดขายและจำนวนรายการสูงสุด
                                 </p>
                                 <div style="font-size:0.82rem; color:#a5b4fc; margin-top:4px;">
-                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายภานุวัฒน์ แสงเครือ (67332110248-5)
+                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายภานุวัฒน์ แสงเครือ (67332110248-5) | <strong>สิ่งที่ควรใช้ใน SQL:</strong> JOIN หลายตาราง GROUP BY และ SUM
                                 </div>
                             </div>
                             <div style="display:flex; gap:8px;">
-                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(3, 'payment_methods_summary')">📥 Export CSV</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(3, 'sales_by_category')">📥 Export CSV</button>
                                 <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ พิมพ์รายงาน</button>
                             </div>
                         </div>
@@ -434,10 +439,10 @@ LIMIT 3;
                             <table class="admin-table" id="report3-table">
                                 <thead>
                                     <tr>
-                                        <th>ช่องทางการชำระเงิน</th>
-                                        <th style="width:180px;">จำนวนคำสั่งซื้อ</th>
-                                        <th style="width:200px;">ยอดขายรวม (บาท)</th>
-                                        <th style="width:200px;">ยอดเฉลี่ยต่อออเดอร์ (บาท)</th>
+                                        <th style="width:80px;">ลำดับ</th>
+                                        <th>ชื่อหมวดหมู่หนังสือ</th>
+                                        <th style="width:200px;">จำนวนรายการที่ขายได้</th>
+                                        <th style="width:220px;">ยอดขายรวม (บาท)</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -445,17 +450,16 @@ LIMIT 3;
                         </div>
 
                         <details class="sql-accordion" open>
-                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, COUNT, SUM, AVG, ROUND, ORDER BY)</summary>
+                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN หลายตาราง, GROUP BY, SUM)</summary>
                             <pre class="sql-code-block">
 SELECT 
-    payments.payment_method,
-    COUNT(orders.order_id) AS total_orders,
-    SUM(orders.total_amount) AS total_sales,
-    ROUND(AVG(orders.total_amount), 2) AS avg_sales
-FROM orders
-JOIN payments ON orders.order_id = payments.order_id
-WHERE orders.status = 'confirmed'
-GROUP BY payments.payment_method
+    categories.name AS category_name,
+    COUNT(order_items.order_item_id) AS total_items_sold,
+    SUM(order_items.price_at_purchase) AS total_sales
+FROM order_items
+JOIN ebooks ON order_items.ebook_id = ebooks.ebook_id
+JOIN categories ON ebooks.category_id = categories.category_id
+GROUP BY categories.name
 ORDER BY total_sales DESC;
                             </pre>
                         </details>
@@ -467,16 +471,16 @@ ORDER BY total_sales DESC;
                     <div class="data-table-card">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                             <div>
-                                <h2 style="font-size:1.35rem;">รายงานที่ 4: ค้นหาลูกค้าประจำที่ซื้อตั้งแต่ 2 ครั้งขึ้นไป (Customer Insights)</h2>
+                                <h2 style="font-size:1.35rem;">รายงานที่ 4: ลูกค้าและคำสั่งซื้อ (Customers & Orders)</h2>
                                 <p style="color:var(--text-secondary); font-size:0.88rem; margin-top:4px;">
-                                    <strong>คำถามที่ตอบ:</strong> หาฐานลูกค้าที่กลับมาซื้อซ้ำตั้งแต่ 2 ครั้งขึ้นไปเพื่อมอบสิทธิพิเศษ Loyalty Reward?
+                                    <strong>คำถามที่ต้องตอบ:</strong> ลูกค้ารายใดซื้อบ่อยหรือมียอดซื้อสะสมสูง และแต่ละสถานะมีจำนวนเท่าใด
                                 </p>
                                 <div style="font-size:0.82rem; color:#a5b4fc; margin-top:4px;">
-                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายภานุวัฒน์ แสงเครือ (67332110248-5)
+                                    👤 <strong>ผู้รับผิดชอบอธิบาย:</strong> นายภานุวัฒน์ แสงเครือ (67332110248-5) | <strong>สิ่งที่ควรใช้ใน SQL:</strong> JOIN GROUP BY HAVING COUNT SUM และเงื่อนไขสถานะ
                                 </div>
                             </div>
                             <div style="display:flex; gap:8px;">
-                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(4, 'repeat_customers')">📥 Export CSV</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV(4, 'customer_orders')">📥 Export CSV</button>
                                 <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ พิมพ์รายงาน</button>
                             </div>
                         </div>
@@ -487,8 +491,9 @@ ORDER BY total_sales DESC;
                                     <tr>
                                         <th style="width:70px;">ลำดับ</th>
                                         <th>ชื่อ-นามสกุลลูกค้า</th>
-                                        <th style="width:200px;">จำนวนครั้งที่สั่งซื้อ</th>
-                                        <th style="width:220px;">ยอดเงินซื้อสะสมรวม (บาท)</th>
+                                        <th style="width:160px;">สถานะคำสั่งซื้อ</th>
+                                        <th style="width:160px;">จำนวนคำสั่งซื้อ</th>
+                                        <th style="width:200px;">ยอดซื้อสะสมรวม (บาท)</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -496,16 +501,17 @@ ORDER BY total_sales DESC;
                         </div>
 
                         <details class="sql-accordion" open>
-                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, HAVING, COUNT, SUM, ORDER BY)</summary>
+                            <summary>🔍 ดูคำสั่ง SQL สำหรับรายงานนี้ (JOIN, GROUP BY, HAVING, COUNT, SUM, เงื่อนไขสถานะ)</summary>
                             <pre class="sql-code-block">
 SELECT 
     users.full_name,
+    orders.status,
     COUNT(orders.order_id) AS total_orders,
     SUM(orders.total_amount) AS total_spent
 FROM users
 JOIN orders ON users.user_id = orders.user_id
 WHERE orders.status = 'confirmed'
-GROUP BY users.full_name
+GROUP BY users.full_name, orders.status
 HAVING COUNT(orders.order_id) >= 2
 ORDER BY total_spent DESC;
                             </pre>

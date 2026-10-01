@@ -1483,9 +1483,44 @@ app.put('/api/admin/users/:id/role', (req, res) => {
 // 7. ANALYTICS & REPORTS APIs (4 รายงานวิเคราะห์ตามข้อ 5 ของใบงาน & PDF เล่มรายงาน)
 // ====================================================================
 
-// รายงานที่ 1: สรุปยอดขายและจำนวนเล่มที่ขายได้ของหนังสือแต่ละเล่ม (JOIN, GROUP BY, COUNT, SUM, ORDER BY)
-app.get(['/api/admin/reports/sales-by-book', '/api/admin/reports/sales-over-time'], (req, res) => {
+// รายงานที่ 1: ยอดขายตามช่วงเวลา (JOIN, GROUP BY, SUM, COUNT, AVG, ตัวกรองวัน)
+app.get(['/api/admin/reports/sales-over-time', '/api/admin/reports/sales-by-time', '/api/admin/reports/sales-by-book'], (req, res) => {
     try {
+        const { start_date, end_date } = req.query;
+        let query = `
+            SELECT 
+                DATE(orders.created_at) AS sales_date,
+                COUNT(orders.order_id) AS total_orders,
+                SUM(orders.total_amount) AS total_sales,
+                ROUND(AVG(orders.total_amount), 2) AS avg_order_value
+            FROM orders
+            JOIN payments ON orders.order_id = payments.order_id
+            WHERE orders.status = 'confirmed'
+        `;
+        const params = [];
+        if (start_date) {
+            query += ` AND DATE(orders.created_at) >= ?`;
+            params.push(start_date);
+        }
+        if (end_date) {
+            query += ` AND DATE(orders.created_at) <= ?`;
+            params.push(end_date);
+        }
+        query += `
+            GROUP BY DATE(orders.created_at)
+            ORDER BY sales_date DESC
+        `;
+        const data = db.prepare(query).all(...params);
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// รายงานที่ 2: E Book ขายดี (JOIN, GROUP BY, SUM หรือ COUNT และ LIMIT)
+app.get(['/api/admin/reports/best-sellers', '/api/admin/reports/best-sellers-top3'], (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 5;
         const data = db.prepare(`
             SELECT 
                 ebooks.title,
@@ -1494,46 +1529,27 @@ app.get(['/api/admin/reports/sales-by-book', '/api/admin/reports/sales-over-time
             FROM order_items
             JOIN ebooks ON order_items.ebook_id = ebooks.ebook_id
             GROUP BY ebooks.title
-            ORDER BY total_sales DESC
-        `).all();
+            ORDER BY total_sold DESC
+            LIMIT ?
+        `).all(limit);
         res.json(data);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// รายงานที่ 2: จัดอันดับ E-Book ขายดีที่สุด 3 อันดับแรก (Top 3 Bestsellers) (JOIN, GROUP BY, COUNT, ORDER BY, LIMIT)
-app.get(['/api/admin/reports/best-sellers-top3', '/api/admin/reports/best-sellers'], (req, res) => {
+// รายงานที่ 3: ยอดขายตามหมวดหมู่ (JOIN หลายตาราง, GROUP BY, SUM)
+app.get(['/api/admin/reports/sales-by-category', '/api/admin/reports/payment-methods'], (req, res) => {
     try {
         const data = db.prepare(`
             SELECT 
-                ebooks.title,
-                COUNT(order_items.order_item_id) AS total_sold
+                categories.name AS category_name,
+                COUNT(order_items.order_item_id) AS total_items_sold,
+                SUM(order_items.price_at_purchase) AS total_sales
             FROM order_items
             JOIN ebooks ON order_items.ebook_id = ebooks.ebook_id
-            GROUP BY ebooks.title
-            ORDER BY total_sold DESC
-            LIMIT 3
-        `).all();
-        res.json(data);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// รายงานที่ 3: สรุปประสิทธิภาพช่องทางชำระเงินและยอดเฉลี่ยต่อบิล (JOIN, GROUP BY, COUNT, SUM, AVG, ROUND, ORDER BY)
-app.get(['/api/admin/reports/payment-methods', '/api/admin/reports/sales-by-category'], (req, res) => {
-    try {
-        const data = db.prepare(`
-            SELECT 
-                payments.payment_method,
-                COUNT(orders.order_id) AS total_orders,
-                SUM(orders.total_amount) AS total_sales,
-                ROUND(AVG(orders.total_amount), 2) AS avg_sales
-            FROM orders
-            JOIN payments ON orders.order_id = payments.order_id
-            WHERE orders.status = 'confirmed'
-            GROUP BY payments.payment_method
+            JOIN categories ON ebooks.category_id = categories.category_id
+            GROUP BY categories.name
             ORDER BY total_sales DESC
         `).all();
         res.json(data);
@@ -1542,21 +1558,23 @@ app.get(['/api/admin/reports/payment-methods', '/api/admin/reports/sales-by-cate
     }
 });
 
-// รายงานที่ 4: ค้นหาลูกค้าประจำที่ซื้อตั้งแต่ 2 ครั้งขึ้นไป (JOIN, GROUP BY, HAVING, COUNT, SUM, ORDER BY)
-app.get(['/api/admin/reports/repeat-customers', '/api/admin/reports/customer-insights'], (req, res) => {
+// รายงานที่ 4: ลูกค้าและคำสั่งซื้อ (JOIN, GROUP BY, HAVING, COUNT, SUM, เงื่อนไขสถานะ)
+app.get(['/api/admin/reports/customer-orders', '/api/admin/reports/repeat-customers', '/api/admin/reports/customer-insights'], (req, res) => {
     try {
+        const status = req.query.status || 'confirmed';
         const data = db.prepare(`
             SELECT 
                 users.full_name,
+                orders.status,
                 COUNT(orders.order_id) AS total_orders,
                 SUM(orders.total_amount) AS total_spent
             FROM users
             JOIN orders ON users.user_id = orders.user_id
-            WHERE orders.status = 'confirmed'
-            GROUP BY users.full_name
+            WHERE orders.status = ?
+            GROUP BY users.full_name, orders.status
             HAVING COUNT(orders.order_id) >= 2
             ORDER BY total_spent DESC
-        `).all();
+        `).all(status);
         res.json(data);
     } catch (err) {
         res.status(500).json({ error: err.message });
