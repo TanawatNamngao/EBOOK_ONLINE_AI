@@ -942,22 +942,6 @@ async function loadMyOrders() {
                 `;
             }).join('');
 
-            ordCard.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:10px; flex-wrap:wrap; gap:8px;">
-                    <div>
-                        <span style="font-size:1rem; font-weight:700; color:#38bdf8;">${ord.order_number}</span>
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">สั่งซื้อเมื่อ: ${ord.created_at}</div>
-                    </div>
-                    <div style="text-align:right;">
-                        <span class="status-badge ${statusBadgeClass}">${statusLabel}</span>
-                        <div style="font-size:1.15rem; font-weight:bold; color:var(--text-primary); margin-top:4px;">ยอดรวม: ฿${parseFloat(ord.total_amount).toFixed(2)}</div>
-                    </div>
-                </div>
-
-                <div style="margin-bottom:8px;">
-                    ${itemsHtml}
-                </div>
-
                 let orderBottomActions = '';
                 if (ord.status === 'pending') {
                     if (ord.slip_image_url) {
