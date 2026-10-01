@@ -160,6 +160,61 @@ async function syncOrderStatusToSupabase(orderId, status, sqliteDb = null) {
     }
 }
 
+// Helper: Sync add item to cart in Supabase
+async function syncCartItemToSupabase(userId, ebookId) {
+    try {
+        let cartRes = await pool.query('SELECT cart_id FROM carts WHERE user_id = $1', [userId]);
+        let supaCartId = cartRes.rows[0]?.cart_id;
+        if (!supaCartId) {
+            const newCart = await pool.query('INSERT INTO carts (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING RETURNING cart_id', [userId]);
+            supaCartId = newCart.rows[0]?.cart_id;
+            if (!supaCartId) {
+                const getAgain = await pool.query('SELECT cart_id FROM carts WHERE user_id = $1', [userId]);
+                supaCartId = getAgain.rows[0]?.cart_id;
+            }
+        }
+        if (supaCartId) {
+            await pool.query(
+                `INSERT INTO cart_items (cart_id, ebook_id, quantity) 
+                 VALUES ($1, $2, 1) 
+                 ON CONFLICT (cart_id, ebook_id) DO NOTHING`,
+                [supaCartId, ebookId]
+            );
+            console.log(`☁️  Synced cart item (E-Book #${ebookId}) for User #${userId} to Supabase!`);
+        }
+    } catch (err) {
+        console.warn('⚠️  Failed to sync cart item to Supabase:', err.message);
+    }
+}
+
+// Helper: Sync remove item from cart in Supabase
+async function removeCartItemFromSupabase(userId, ebookId) {
+    try {
+        const cartRes = await pool.query('SELECT cart_id FROM carts WHERE user_id = $1', [userId]);
+        const supaCartId = cartRes.rows[0]?.cart_id;
+        if (supaCartId) {
+            await pool.query('DELETE FROM cart_items WHERE cart_id = $1 AND ebook_id = $2', [supaCartId, ebookId]);
+            console.log(`☁️  Synced remove cart item (E-Book #${ebookId}) for User #${userId} from Supabase!`);
+        }
+    } catch (err) {
+        console.warn('⚠️  Failed to sync remove cart item from Supabase:', err.message);
+    }
+}
+
+// Helper: Sync clear cart in Supabase
+async function clearCartInSupabase(userId) {
+    try {
+        const cartRes = await pool.query('SELECT cart_id FROM carts WHERE user_id = $1', [userId]);
+        const supaCartId = cartRes.rows[0]?.cart_id;
+        if (supaCartId) {
+            await pool.query('DELETE FROM cart_items WHERE cart_id = $1', [supaCartId]);
+            console.log(`☁️  Synced clear cart for User #${userId} from Supabase!`);
+        }
+    } catch (err) {
+        console.warn('⚠️  Failed to clear cart in Supabase:', err.message);
+    }
+}
+
 function toSqliteDate(val) {
     if (!val) return null;
     if (val instanceof Date) return val.toISOString().replace('T', ' ').substring(0, 19);
@@ -269,5 +324,8 @@ module.exports = {
     syncOrderToSupabase,
     syncPaymentToSupabase,
     syncOrderStatusToSupabase,
+    syncCartItemToSupabase,
+    removeCartItemFromSupabase,
+    clearCartInSupabase,
     syncFromSupabaseToSQLite
 };

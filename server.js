@@ -491,6 +491,11 @@ app.post('/api/cart/items', (req, res) => {
         db.prepare('INSERT INTO cart_items (cart_id, ebook_id, quantity) VALUES (?, ?, 1)').run(cartId, ebook_id);
         db.prepare('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE cart_id = ?').run(cartId);
 
+        // Realtime sync to Supabase Cloud
+        try {
+            supabaseSync.syncCartItemToSupabase(user.user_id, ebook_id);
+        } catch (e) {}
+
         res.status(201).json({ message: 'เพิ่มลงในตะกร้าเรียบร้อย' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -504,7 +509,16 @@ app.delete('/api/cart/items/:id', (req, res) => {
         if (!user) return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบ' });
         const cartId = getOrCreateUserCart(user.user_id);
 
+        const item = db.prepare('SELECT ebook_id FROM cart_items WHERE cart_item_id = ? AND cart_id = ?').get(req.params.id, cartId);
         db.prepare('DELETE FROM cart_items WHERE cart_item_id = ? AND cart_id = ?').run(req.params.id, cartId);
+
+        // Realtime sync to Supabase Cloud
+        if (item) {
+            try {
+                supabaseSync.removeCartItemFromSupabase(user.user_id, item.ebook_id);
+            } catch (e) {}
+        }
+
         res.json({ message: 'ลบรายการออกจากตะกร้าแล้ว' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -519,6 +533,12 @@ app.delete('/api/cart', (req, res) => {
         const cartId = getOrCreateUserCart(user.user_id);
 
         db.prepare('DELETE FROM cart_items WHERE cart_id = ?').run(cartId);
+
+        // Realtime sync to Supabase Cloud
+        try {
+            supabaseSync.clearCartInSupabase(user.user_id);
+        } catch (e) {}
+
         res.json({ message: 'ล้างตะกร้าสินค้าเรียบร้อย' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -587,6 +607,7 @@ app.post('/api/orders/checkout', (req, res) => {
                 { order_id: orderInfo.orderId, order_number: orderInfo.orderNumber, user_id: user.user_id, total_amount: orderInfo.totalAmount, status: 'pending' },
                 cartItems
             );
+            supabaseSync.clearCartInSupabase(user.user_id);
         } catch (e) {}
 
         res.status(201).json({ message: 'สั่งซื้อสำเร็จ กรุณาแจ้งชำระเงิน', order: orderInfo });
@@ -1599,6 +1620,42 @@ app.get('/api/admin/dashboard-stats', (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Supabase Cloud PostgreSQL Health & Status API
+app.get('/api/admin/supabase-status', async (req, res) => {
+    try {
+        const start = Date.now();
+        const testRes = await supabaseSync.pool.query('SELECT NOW() AS now, count(*) AS total_orders FROM orders');
+        const latency = Date.now() - start;
+        const usersRes = await supabaseSync.pool.query('SELECT count(*) AS total_users FROM users');
+        const booksRes = await supabaseSync.pool.query('SELECT count(*) AS total_books FROM ebooks');
+        res.json({
+            connected: true,
+            latency_ms: latency,
+            project_id: 'skzpfkrwvsiqxamgfbey',
+            region: 'aws-0-ap-southeast-2 (Sydney)',
+            database_engine: 'PostgreSQL 15 on Supabase Cloud',
+            cloud_tables: {
+                orders: parseInt(testRes.rows[0].total_orders),
+                users: parseInt(usersRes.rows[0].total_users),
+                ebooks: parseInt(booksRes.rows[0].total_books)
+            },
+            server_time: testRes.rows[0].now
+        });
+    } catch (err) {
+        res.status(500).json({ connected: false, error: err.message });
+    }
+});
+
+// Trigger Manual Real-time Sync with Supabase Cloud
+app.post('/api/admin/sync-supabase', async (req, res) => {
+    try {
+        await supabaseSync.syncFromSupabaseToSQLite(db);
+        res.json({ success: true, message: 'ซิงค์ข้อมูลกับ Supabase Cloud สำเร็จเรียบร้อยแล้ว!' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
