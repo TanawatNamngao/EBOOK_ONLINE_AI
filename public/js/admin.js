@@ -636,6 +636,9 @@ async function submitNewEbook(e) {
     const fileInput = document.getElementById('new-book-cover-file');
     const coverUrlInput = document.getElementById('new-book-cover-url');
 
+    const pdfFileInput = document.getElementById('new-book-pdf-file');
+    const pdfUrlInput = document.getElementById('new-book-file-url');
+
     const formData = new FormData();
     formData.append('title', title);
     formData.append('category_id', category_id);
@@ -643,7 +646,14 @@ async function submitNewEbook(e) {
     formData.append('price', price);
     formData.append('isbn', isbn);
     formData.append('description', description);
-    formData.append('full_file_url', '/downloads/full_db_guide.pdf');
+
+    if (pdfFileInput && pdfFileInput.files && pdfFileInput.files[0]) {
+        formData.append('pdf_file', pdfFileInput.files[0]);
+    } else if (pdfUrlInput && pdfUrlInput.value.trim()) {
+        formData.append('full_file_url', pdfUrlInput.value.trim());
+    } else {
+        formData.append('full_file_url', '/downloads/full_db_guide.pdf');
+    }
 
     if (fileInput && fileInput.files && fileInput.files[0]) {
         formData.append('cover_file', fileInput.files[0]);
@@ -866,6 +876,8 @@ function openEditEbookModal(bookOrId) {
     if (coverUrlInput) coverUrlInput.value = book.cover_image || '';
     const fileInput = document.getElementById('edit-book-cover-file');
     if (fileInput) fileInput.value = '';
+    const pdfFileInput = document.getElementById('edit-book-pdf-file');
+    if (pdfFileInput) pdfFileInput.value = '';
 
     const catSelect = document.getElementById('edit-book-category');
     catSelect.innerHTML = allAdminCategories.map(c => 
@@ -904,6 +916,7 @@ async function submitEditEbook(e) {
     const full_file_url = document.getElementById('edit-book-file-url').value;
     const fileInput = document.getElementById('edit-book-cover-file');
     const coverUrlInput = document.getElementById('edit-book-cover-url');
+    const pdfFileInput = document.getElementById('edit-book-pdf-file');
 
     const formData = new FormData();
     formData.append('title', title);
@@ -913,6 +926,10 @@ async function submitEditEbook(e) {
     formData.append('isbn', isbn);
     formData.append('description', description);
     formData.append('full_file_url', full_file_url);
+
+    if (pdfFileInput && pdfFileInput.files && pdfFileInput.files[0]) {
+        formData.append('pdf_file', pdfFileInput.files[0]);
+    }
 
     if (fileInput && fileInput.files && fileInput.files[0]) {
         formData.append('cover_file', fileInput.files[0]);

@@ -628,6 +628,17 @@ ORDER BY total_spent DESC;
                     </div>
                 </div>
                 <div style="margin-bottom:14px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">
+                        📄 ไฟล์ E-Book ฉบับเต็ม (PDF File / Download Link)
+                        <span style="color:var(--text-muted); font-size:0.78rem; font-weight:normal;">(เลือกลงไฟล์ PDF หรือระบุ URL)</span>
+                    </label>
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <input type="file" id="new-book-pdf-file" accept=".pdf,application/pdf" class="search-input" style="width:100%; padding:6px; font-size:0.82rem;">
+                        <input type="text" id="new-book-file-url" placeholder="หรือใส่ URL ลิงก์ดาวน์โหลด (เว้นว่างไว้จะใช้ไฟล์ระบบอัตโนมัติ)" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:0.82rem;">
+                        <small style="color:var(--text-muted); font-size:0.75rem;">💡 ระบบมี Fallback ป้องกัน Error 404: หากเว้นว่างไว้ ลูกค้าจะยังคงดาวน์โหลดไฟล์ฉบับเต็มได้เสมอ</small>
+                    </div>
+                </div>
+                <div style="margin-bottom:14px;">
                     <label style="display:block; font-size:0.88rem; margin-bottom:4px;">คำอธิบายหนังสือ</label>
                     <textarea id="new-book-desc" rows="3" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;"></textarea>
                 </div>
@@ -675,8 +686,13 @@ ORDER BY total_spent DESC;
                     </div>
                 </div>
                 <div style="margin-bottom:12px;">
-                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ที่อยู่ไฟล์ดาวน์โหลด (Full File URL) *</label>
-                    <input type="text" id="edit-book-file-url" required class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">
+                        📄 ไฟล์ E-Book ฉบับเต็ม (PDF File / Download Link) *
+                    </label>
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <input type="file" id="edit-book-pdf-file" accept=".pdf,application/pdf" class="search-input" style="width:100%; padding:6px; font-size:0.82rem;">
+                        <input type="text" id="edit-book-file-url" required class="search-input" placeholder="หรือระบุ URL / Path ไฟล์ (เช่น /downloads/my_book.pdf)" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:0.82rem;">
+                    </div>
                 </div>
                 <div style="margin-bottom:14px;">
                     <label style="display:block; font-size:0.88rem; margin-bottom:4px;">รูปภาพหน้าปกหนังสือ (Cover Image)</label>
@@ -751,6 +767,6 @@ ORDER BY total_spent DESC;
     <!-- Toast Notification -->
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="/js/admin.js?v=20261001_v6"></script>
+    <script src="/js/admin.js?v=20261001_v7"></script>
 </body>
 </html>
