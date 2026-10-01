@@ -519,17 +519,30 @@ ORDER BY total_spent DESC;
         <div class="modal-card" style="max-width:520px; text-align:center;">
             <button class="modal-close" onclick="closeSlipModal()">✕</button>
             <h3 style="margin-bottom:12px;" id="slip-modal-title">ตรวจสอบหลักฐานการชำระเงิน</h3>
+            
+            <!-- Warning Box when Order has NO SLIP -->
+            <div id="slip-no-evidence-alert" style="display:none; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:10px; padding:22px 18px; text-align:center; margin-bottom:16px;">
+                <div style="font-size:3rem; margin-bottom:6px; line-height:1;">⚠️</div>
+                <h4 style="color:#f87171; font-size:1.15rem; margin-bottom:8px; font-weight:700;">ลูกค้ารายนี้ยังไม่ได้แนบสลิป (ไม่มีหลักฐานการชำระเงิน)</h4>
+                <p style="color:#cbd5e1; font-size:0.88rem; line-height:1.5; margin:0 auto 16px; max-width:380px;">
+                    คำสั่งซื้อนี้ถูกบันทึกโดย<strong>ไม่แนบหลักฐานสลิป</strong> หรือยังค้างชำระเงิน เหมาะสำหรับใช้เป็นตัวอย่างทดสอบปฏิเสธและยกเลิกคำสั่งซื้อ
+                </p>
+                <button type="button" class="btn btn-danger" style="background:#ef4444; border:none; padding:10px 22px; border-radius:8px; font-weight:bold; cursor:pointer; box-shadow:0 4px 14px rgba(239,68,68,0.4); font-size:0.95rem;" onclick="cancelOrderFromSlip()">
+                    ✕ ปฏิเสธคำสั่งซื้อทันที (ยกเลิกรายการเนื่องจากไม่มีสลิป)
+                </button>
+            </div>
+
             <div id="slip-img-container" style="margin-bottom:16px;">
                 <img src="" id="slip-modal-img" class="slip-viewer-img" alt="Slip Preview">
             </div>
             <div id="slip-order-details" style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:20px; text-align:left; background:var(--bg-surface-elevated); padding:12px; border-radius:var(--radius-sm);">
                 <!-- Order details -->
             </div>
-            <div style="display:flex; gap:12px; justify-content:center;">
+            <div style="display:flex; gap:12px; justify-content:center;" id="slip-modal-actions">
                 <button class="btn btn-primary" id="btn-approve-slip" style="background:#059669;" onclick="confirmOrderFromSlip()">
                     ✓ อนุมัติ & ปลดล็อกดาวน์โหลด
                 </button>
-                <button class="btn btn-secondary" id="btn-reject-slip" style="color:var(--danger);" onclick="cancelOrderFromSlip()">
+                <button class="btn btn-secondary" id="btn-reject-slip" style="color:var(--danger); border-color:var(--danger);" onclick="cancelOrderFromSlip()">
                     ✕ ปฏิเสธคำสั่งซื้อ
                 </button>
             </div>

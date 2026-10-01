@@ -187,25 +187,35 @@
                 <div style="color:#64748b; font-size:0.8rem; margin-top:6px;">ยอดชำระ: <strong id="checkout-qr-amount" style="color:#0369a1; font-size:1.1rem;">฿0.00</strong></div>
             </div>
 
-            <!-- Mock Slip Upload -->
+            <!-- Mock Slip Upload / No-Slip Toggle -->
             <div style="margin-bottom: 24px;">
-                <label style="display:block; font-weight:600; margin-bottom:6px;">แนบสลิปหรือหลักฐานจำลอง:</label>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="btn btn-secondary btn-sm" type="button" onclick="usePrebuiltMockSlip()" id="btn-quick-slip">
-                        ⚡ ใช้สลิปจำลองอัตโนมัติ (1-Click)
+                <label style="display:block; font-weight:600; margin-bottom:8px;">หลักฐานการชำระเงินจำลอง:</label>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <button class="btn btn-secondary btn-sm" type="button" onclick="usePrebuiltMockSlip()" id="btn-quick-slip" style="border:1px solid var(--primary); padding:10px 8px; text-align:center; font-weight:600; background:rgba(99,102,241,0.15); color:#a5b4fc; transition:all 0.2s;">
+                        ⚡ แนบสลิปจำลอง (1-Click)
                     </button>
-                    <input type="file" id="slip-file-input" accept="image/*" onchange="handleSlipFileChange(this)" style="font-size:0.85rem; color:var(--text-muted); align-self:center;">
+                    <button class="btn btn-secondary btn-sm" type="button" onclick="selectNoSlipOption()" id="btn-no-slip" style="border:1px solid rgba(239,68,68,0.4); color:#f87171; background:rgba(239,68,68,0.06); padding:10px 8px; text-align:center; font-weight:600; transition:all 0.2s;">
+                        🚫 ไม่แนบสลิป (ตัวอย่างยกเลิก)
+                    </button>
                 </div>
-                <div id="slip-preview-status" style="font-size:0.85rem; color:var(--success); margin-top:6px; display:none;">
+
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <span style="font-size:0.8rem; color:var(--text-muted); white-space:nowrap;">หรืออัปโหลดรูปเอง:</span>
+                    <input type="file" id="slip-file-input" accept="image/*" onchange="handleSlipFileChange(this)" style="font-size:0.82rem; color:var(--text-muted); width:100%;">
+                </div>
+
+                <div id="slip-preview-status" style="font-size:0.85rem; padding:8px 12px; border-radius:6px; margin-top:8px; display:none; line-height:1.4;">
                     ✓ แนบหลักฐานสลิปจำลองเรียบร้อย พร้อมแจ้งชำระเงิน
                 </div>
-                <div id="slip-preview-container" style="display:none; margin-top:12px; text-align:center; background:rgba(15,23,42,0.4); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
-                    <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:6px;">ตัวอย่างสลิปที่แนบ:</div>
+
+                <div id="slip-preview-container" style="display:none; margin-top:12px; text-align:center; background:rgba(15,23,42,0.4); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:6px;">ตัวอย่างสลิปที่จะแนบส่ง:</div>
                     <img id="checkout-slip-preview-img" src="" style="max-width:180px; max-height:240px; border-radius:8px; border:1px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.3); display:inline-block;" alt="ตัวอย่างสลิป">
                 </div>
             </div>
 
-            <button class="btn btn-primary" id="btn-submit-order-payment" style="width:100%; padding:12px;" onclick="submitOrderAndPayment()">
+            <button class="btn btn-primary" id="btn-submit-order-payment" style="width:100%; padding:13px; font-size:1rem; font-weight:600;" onclick="submitOrderAndPayment()">
                 ยืนยันการสั่งซื้อและแจ้งชำระเงิน 🚀
             </button>
         </div>

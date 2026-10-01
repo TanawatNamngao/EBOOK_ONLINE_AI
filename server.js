@@ -587,25 +587,19 @@ app.get('/api/slips/preview', (req, res) => {
     }
 });
 
-// Dynamic Slip Serving / Fallback generator for ANY order (prevents 404 and mismatched fallback slips)
+// Dynamic Slip Serving / Fallback generator for orders WITH valid slips
 app.get(['/api/orders/:id/slip', '/assets/slips/slip_order_:id.svg', '/assets/slips/slip_order_:id.png'], (req, res) => {
     try {
         const orderId = req.params.id;
         const slipsDir = path.join(__dirname, 'public', 'assets', 'slips');
         const svgFile = path.join(slipsDir, `slip_order_${orderId}.svg`);
+        const pngFile = path.join(slipsDir, `slip_order_${orderId}.png`);
 
-        // If file exists on disk, send it
-        if (fs.existsSync(svgFile)) {
-            res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-            return res.sendFile(svgFile);
-        }
-
-        // If not found on disk (e.g. after Render restart/deploy), generate dynamically from DB
+        // Check order and payment in DB first
         const order = db.prepare(`
             SELECT o.order_id, o.order_number, o.total_amount, o.status, o.created_at,
                    u.full_name, u.username,
-                   p.payment_method, p.amount, p.paid_at
+                   p.payment_method, p.amount, p.paid_at, p.slip_image_url
             FROM orders o
             JOIN users u ON o.user_id = u.user_id
             LEFT JOIN payments p ON o.order_id = p.order_id
@@ -613,9 +607,33 @@ app.get(['/api/orders/:id/slip', '/assets/slips/slip_order_:id.svg', '/assets/sl
         `).get(orderId, orderId);
 
         if (!order) {
-            return res.redirect('/api/slips/preview?amount=0&name=' + encodeURIComponent('ลูกค้า'));
+            return res.status(404).json({ error: 'ไม่พบคำสั่งซื้อ' });
         }
 
+        // CRITICAL: If the order in DB has NO slip, NEVER fabricate a slip!
+        if (!order.slip_image_url) {
+            // Remove any stale cache file on disk if it existed
+            try {
+                if (fs.existsSync(svgFile)) fs.unlinkSync(svgFile);
+                if (fs.existsSync(pngFile)) fs.unlinkSync(pngFile);
+            } catch (e) {}
+
+            return res.status(404).json({ 
+                error: 'ไม่มีหลักฐานการชำระเงิน',
+                has_slip: false,
+                order_number: order.order_number,
+                message: 'คำสั่งซื้อนี้ยังไม่มีการแนบสลิป (ค้างชำระ)'
+            });
+        }
+
+        // If file exists on disk and order genuinely has a slip, send it
+        if (fs.existsSync(svgFile)) {
+            res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            return res.sendFile(svgFile);
+        }
+
+        // If slip_image_url is registered in DB but file was purged (e.g. fresh Render container), regenerate
         const theme = order.payment_method === 'bank_transfer' ? 'KBANK' : 'PROMPTPAY';
         const svg = generateSlipSvg({
             orderNumber: order.order_number,
@@ -630,23 +648,23 @@ app.get(['/api/orders/:id/slip', '/assets/slips/slip_order_:id.svg', '/assets/sl
         try {
             if (!fs.existsSync(slipsDir)) fs.mkdirSync(slipsDir, { recursive: true });
             fs.writeFileSync(svgFile, svg, 'utf8');
-            fs.writeFileSync(path.join(slipsDir, `slip_order_${orderId}.png`), svg, 'utf8');
+            fs.writeFileSync(pngFile, svg, 'utf8');
         } catch (e) {}
 
         res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
         res.setHeader('Cache-Control', 'public, max-age=3600');
         res.send(svg);
     } catch (err) {
-        console.error('Error generating dynamic slip:', err);
-        res.status(500).send('Error generating slip');
+        console.error('Error serving slip:', err);
+        res.status(500).send('Error serving slip');
     }
 });
 
-// Submit Mock Payment & Slip
+// Submit Mock Payment & Slip (Supports both attaching slip and ordering without slip)
 app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) => {
     try {
         const orderId = req.params.id;
-        const { payment_method, note } = req.body;
+        const { payment_method, note, skip_slip, no_slip, slip_mock_url } = req.body;
         let slipUrl = null;
 
         const order = db.prepare(`
@@ -661,9 +679,45 @@ app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) 
             return res.status(400).json({ error: 'คำสั่งซื้อนี้ได้รับการยืนยันเรียบร้อยแล้ว' });
         }
 
+        const isSkip = skip_slip === 'true' || skip_slip === true || no_slip === 'true' || no_slip === true;
+
+        if (isSkip) {
+            // Explicitly ordered without slip (for pending / demo cancel)
+            slipUrl = null;
+            db.prepare(`
+                UPDATE payments 
+                SET payment_method = ?,
+                    payment_status = 'pending',
+                    slip_image_url = NULL,
+                    amount = ?,
+                    note = ?
+                WHERE order_id = ?
+            `).run(payment_method || 'promptpay_qr', order.total_amount, note || 'สั่งซื้อโดยยังไม่ได้แนบสลิป (ค้างชำระ/ตัวอย่างยกเลิก)', orderId);
+
+            db.prepare("UPDATE orders SET status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?").run(orderId);
+
+            try {
+                supabaseSync.syncPaymentToSupabase({
+                    order_id: orderId,
+                    payment_method: payment_method || 'promptpay_qr',
+                    payment_status: 'pending',
+                    slip_image_url: null,
+                    amount: order.total_amount,
+                    note: note || 'สั่งซื้อโดยยังไม่ได้แนบสลิป (ค้างชำระ/ตัวอย่างยกเลิก)'
+                });
+            } catch (e) {}
+
+            return res.json({ 
+                message: 'บันทึกคำสั่งซื้อเรียบร้อย (ยังไม่ได้แนบสลิป/ค้างชำระ)', 
+                slip_image_url: null,
+                has_slip: false 
+            });
+        }
+
+        // If file or slip_mock_url provided:
         if (req.file) {
             slipUrl = `/assets/slips/${req.file.filename}`;
-        } else {
+        } else if (slip_mock_url) {
             // Generate customized dynamic SVG slip matching the EXACT order total amount & customer name!
             slipUrl = createSlipFileForOrder({
                 orderId: order.order_id,
@@ -672,18 +726,36 @@ app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) 
                 totalAmount: order.total_amount,
                 paymentMethod: payment_method || 'promptpay_qr'
             });
+        } else {
+            // No file and no slip_mock_url -> do not generate slip
+            slipUrl = null;
         }
 
-        db.prepare(`
-            UPDATE payments 
-            SET payment_method = ?,
-                payment_status = 'submitted',
-                slip_image_url = ?,
-                amount = ?,
-                paid_at = CURRENT_TIMESTAMP,
-                note = ?
-            WHERE order_id = ?
-        `).run(payment_method || 'promptpay_qr', slipUrl, order.total_amount, note || 'แจ้งชำระเงินจำลองแล้ว', orderId);
+        const newPaymentStatus = slipUrl ? 'submitted' : 'pending';
+        const finalNote = note || (slipUrl ? 'แจ้งชำระเงินจำลองแล้ว' : 'รอการแจ้งชำระเงินและแนบสลิป');
+
+        if (slipUrl) {
+            db.prepare(`
+                UPDATE payments 
+                SET payment_method = ?,
+                    payment_status = ?,
+                    slip_image_url = ?,
+                    amount = ?,
+                    paid_at = CURRENT_TIMESTAMP,
+                    note = ?
+                WHERE order_id = ?
+            `).run(payment_method || 'promptpay_qr', newPaymentStatus, slipUrl, order.total_amount, finalNote, orderId);
+        } else {
+            db.prepare(`
+                UPDATE payments 
+                SET payment_method = ?,
+                    payment_status = ?,
+                    slip_image_url = NULL,
+                    amount = ?,
+                    note = ?
+                WHERE order_id = ?
+            `).run(payment_method || 'promptpay_qr', newPaymentStatus, order.total_amount, finalNote, orderId);
+        }
 
         db.prepare('UPDATE orders SET updated_at = CURRENT_TIMESTAMP WHERE order_id = ?').run(orderId);
 
@@ -692,14 +764,18 @@ app.post('/api/orders/:id/payment', uploadSlip.single('slip_image'), (req, res) 
             supabaseSync.syncPaymentToSupabase({
                 order_id: orderId,
                 payment_method: payment_method || 'promptpay_qr',
-                payment_status: 'submitted',
+                payment_status: newPaymentStatus,
                 slip_image_url: slipUrl,
                 amount: order.total_amount,
-                note: note || 'แจ้งชำระเงินจำลองแล้ว'
+                note: finalNote
             });
         } catch (e) {}
 
-        res.json({ message: 'แจ้งชำระเงินสำเร็จ กรุณารอผู้ดูแลระบบตรวจสอบหลักฐาน', slip_image_url: slipUrl });
+        res.json({ 
+            message: slipUrl ? 'แจ้งชำระเงินสำเร็จ กรุณารอผู้ดูแลระบบตรวจสอบหลักฐาน' : 'บันทึกคำสั่งซื้อ (ยังไม่แนบสลิป) เรียบร้อย', 
+            slip_image_url: slipUrl,
+            has_slip: !!slipUrl 
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

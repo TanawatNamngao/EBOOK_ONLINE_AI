@@ -187,7 +187,10 @@ def convert_md_to_docx(md_path, docx_path):
                 p.paragraph_format.space_after = Pt(4)
                 is_logo = 'logo' in img_rel.lower()
                 width = Inches(1.8) if is_logo else Inches(5.8)
-                p.add_run().add_picture(img_full, width=width)
+                try:
+                    p.add_run().add_picture(img_full, width=width)
+                except Exception as img_err:
+                    p.add_run(f"[{img_rel}]")
             continue
 
         # Handle Markdown image ![alt](path)
@@ -206,7 +209,10 @@ def convert_md_to_docx(md_path, docx_path):
                 p.paragraph_format.space_after = Pt(4)
                 is_logo = 'logo' in img_rel.lower()
                 width = Inches(1.8) if is_logo else Inches(5.8)
-                p.add_run().add_picture(img_full, width=width)
+                try:
+                    p.add_run().add_picture(img_full, width=width)
+                except Exception as img_err:
+                    p.add_run(f"[{caption or img_rel}]")
                 if caption:
                     p_cap = doc.add_paragraph()
                     p_cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -346,7 +352,12 @@ def convert_md_to_docx(md_path, docx_path):
     if in_code_block:
         flush_code()
 
-    doc.save(docx_path)
+    try:
+        doc.save(docx_path)
+    except PermissionError:
+        new_path = docx_path.replace('.docx', '_UPDATED.docx')
+        doc.save(new_path)
+        print(f'  ⚠️ {os.path.basename(docx_path)} is open in Word! Saved to {os.path.basename(new_path)} instead.')
 
 print('🚀 Converting Markdown documents to Microsoft Word (.docx) with TH Sarabun New font...')
 

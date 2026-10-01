@@ -10,6 +10,7 @@ let selectedCategory = 'all';
 let searchQuery = '';
 let currentSort = 'newest';
 let activeMockSlipUrl = '/assets/slips/slip_mock_01.png';
+let isSkipSlipSelected = false;
 let currentCartData = { items: [], total_amount: 0 };
 
 // DOM Content Loaded
@@ -507,13 +508,55 @@ function openCheckoutModal() {
 
     document.getElementById('checkout-qr-amount').textContent = `฿${totalFormatted}`;
 
-    // Auto-generate matching mock slip immediately so user sees the matching slip right away!
-    usePrebuiltMockSlip(true);
+    // Default state: NO SLIP attached until user explicitly clicks to attach or uploads file
+    activeMockSlipUrl = null;
+    isSkipSlipSelected = true;
+    
+    const fileInput = document.getElementById('slip-file-input');
+    if (fileInput) fileInput.value = '';
+    
+    const container = document.getElementById('slip-preview-container');
+    if (container) container.style.display = 'none';
+    
+    const previewImg = document.getElementById('checkout-slip-preview-img');
+    if (previewImg) previewImg.src = '';
+    
+    const btnQuick = document.getElementById('btn-quick-slip');
+    if (btnQuick) {
+        btnQuick.style.borderColor = 'var(--border)';
+        btnQuick.style.background = 'transparent';
+        btnQuick.style.color = 'var(--text-secondary)';
+        btnQuick.style.boxShadow = 'none';
+    }
+    
+    const btnNoSlip = document.getElementById('btn-no-slip');
+    if (btnNoSlip) {
+        btnNoSlip.style.borderColor = '#ef4444';
+        btnNoSlip.style.background = 'rgba(239,68,68,0.2)';
+        btnNoSlip.style.color = '#ffffff';
+        btnNoSlip.style.boxShadow = '0 0 10px rgba(239,68,68,0.3)';
+    }
+
+    const status = document.getElementById('slip-preview-status');
+    if (status) {
+        status.style.display = 'block';
+        status.style.background = 'rgba(239,68,68,0.08)';
+        status.style.border = '1px solid rgba(239,68,68,0.25)';
+        status.style.color = '#f87171';
+        status.innerHTML = '⚠️ <strong>ยังไม่ได้แนบสลิป</strong>: กดปุ่ม <em>"⚡ แนบสลิปจำลอง (1-Click)"</em> เพื่อแนบสลิป หรือกดปุ่มด้านล่างเพื่อสั่งซื้อแบบไม่แนบสลิป (ค้างชำระ)';
+    }
+
+    const btnSubmit = document.getElementById('btn-submit-order-payment');
+    if (btnSubmit) {
+        btnSubmit.textContent = 'ยืนยันการสั่งซื้อ (ยังไม่แนบสลิป / ค้างชำระ) ⏳';
+        btnSubmit.style.background = '#64748b';
+    }
 }
 
 function closeCheckoutModal() {
     document.getElementById('checkout-modal').classList.remove('active');
     activeMockSlipUrl = null;
+    isSkipSlipSelected = true;
     const status = document.getElementById('slip-preview-status');
     const container = document.getElementById('slip-preview-container');
     const previewImg = document.getElementById('checkout-slip-preview-img');
@@ -525,9 +568,16 @@ function closeCheckoutModal() {
     }
     if (container) container.style.display = 'none';
     if (previewImg) previewImg.src = '';
+
+    const btnSubmit = document.getElementById('btn-submit-order-payment');
+    if (btnSubmit) {
+        btnSubmit.textContent = 'ยืนยันการสั่งซื้อ (ยังไม่แนบสลิป / ค้างชำระ) ⏳';
+        btnSubmit.style.background = '#64748b';
+    }
 }
 
 function usePrebuiltMockSlip(isAuto = false) {
+    isSkipSlipSelected = false;
     const totalAmount = parseFloat(currentCartData.total_amount || 0);
     const selectedMethod = document.querySelector('input[name="pay-method"]:checked')?.value || 'promptpay_qr';
     const timestamp = Date.now();
@@ -540,18 +590,91 @@ function usePrebuiltMockSlip(isAuto = false) {
     const previewImg = document.getElementById('checkout-slip-preview-img');
     const fileInput = document.getElementById('slip-file-input');
     if (fileInput) fileInput.value = '';
+
+    const btnQuick = document.getElementById('btn-quick-slip');
+    if (btnQuick) {
+        btnQuick.style.borderColor = 'var(--primary)';
+        btnQuick.style.background = 'rgba(99,102,241,0.25)';
+        btnQuick.style.color = '#a5b4fc';
+        btnQuick.style.boxShadow = '0 0 10px rgba(99,102,241,0.2)';
+    }
+
+    const btnNoSlip = document.getElementById('btn-no-slip');
+    if (btnNoSlip) {
+        btnNoSlip.style.borderColor = 'rgba(239,68,68,0.4)';
+        btnNoSlip.style.background = 'rgba(239,68,68,0.06)';
+        btnNoSlip.style.color = '#f87171';
+        btnNoSlip.style.boxShadow = 'none';
+    }
     
     if (status) {
         status.style.display = 'block';
-        status.innerHTML = `✓ สร้างสลิปจำลองตรงตามยอดชำระจริง (฿${totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}) เรียบร้อย`;
+        status.style.background = 'rgba(16,185,129,0.12)';
+        status.style.border = '1px solid rgba(16,185,129,0.3)';
+        status.style.color = '#34d399';
+        status.innerHTML = `✓ สร้างสลิปจำลองตรงตามยอดชำระจริง (฿${totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}) เรียบร้อย พร้อมแจ้งชำระ`;
     }
     if (previewImg && container) {
         previewImg.src = activeMockSlipUrl;
         container.style.display = 'block';
     }
+
+    const btnSubmit = document.getElementById('btn-submit-order-payment');
+    if (btnSubmit) {
+        btnSubmit.textContent = 'ยืนยันการสั่งซื้อและแจ้งชำระเงิน 🚀';
+        btnSubmit.style.background = '';
+    }
+
     if (!isAuto) {
         showToast(`แนบสลิปจำลองยอดเงิน ฿${totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} เรียบร้อย`);
     }
+}
+
+function selectNoSlipOption() {
+    isSkipSlipSelected = true;
+    activeMockSlipUrl = null;
+
+    const fileInput = document.getElementById('slip-file-input');
+    if (fileInput) fileInput.value = '';
+
+    const container = document.getElementById('slip-preview-container');
+    if (container) container.style.display = 'none';
+
+    const previewImg = document.getElementById('checkout-slip-preview-img');
+    if (previewImg) previewImg.src = '';
+
+    const btnQuick = document.getElementById('btn-quick-slip');
+    if (btnQuick) {
+        btnQuick.style.borderColor = 'var(--border)';
+        btnQuick.style.background = 'transparent';
+        btnQuick.style.color = 'var(--text-secondary)';
+        btnQuick.style.boxShadow = 'none';
+    }
+
+    const btnNoSlip = document.getElementById('btn-no-slip');
+    if (btnNoSlip) {
+        btnNoSlip.style.borderColor = '#ef4444';
+        btnNoSlip.style.background = 'rgba(239,68,68,0.25)';
+        btnNoSlip.style.color = '#ffffff';
+        btnNoSlip.style.boxShadow = '0 0 12px rgba(239,68,68,0.35)';
+    }
+
+    const status = document.getElementById('slip-preview-status');
+    if (status) {
+        status.style.display = 'block';
+        status.style.background = 'rgba(239,68,68,0.12)';
+        status.style.border = '1px solid rgba(239,68,68,0.35)';
+        status.style.color = '#f87171';
+        status.innerHTML = '⚠️ <strong>เลือกสั่งซื้อโดยไม่แนบสลิป</strong>: รายการนี้จะอยู่ในสถานะ "รอชำระเงิน" (ไม่มีสลิป) เหมาะสำหรับนำไปเป็นตัวอย่างทดสอบการตรวจสอบหรือปฏิเสธคำสั่งซื้อในหน้า Admin';
+    }
+
+    const btnSubmit = document.getElementById('btn-submit-order-payment');
+    if (btnSubmit) {
+        btnSubmit.textContent = 'ยืนยันการสั่งซื้อ (ไม่แนบสลิป / ค้างชำระ) ⏳';
+        btnSubmit.style.background = '#e11d48';
+    }
+
+    showToast('เลือกสั่งซื้อแบบไม่แนบสลิป (ตัวอย่างสำหรับยกเลิก)', 'info');
 }
 
 function handlePaymentMethodChange(radio) {
@@ -567,14 +690,15 @@ function handlePaymentMethodChange(radio) {
             }
         }
     });
-    // Auto-update slip preview with new theme
-    if (activeMockSlipUrl || document.getElementById('slip-preview-container')?.style.display !== 'none') {
+    // Auto-update slip preview with new theme if active
+    if (!isSkipSlipSelected && (activeMockSlipUrl || document.getElementById('slip-preview-container')?.style.display !== 'none')) {
         usePrebuiltMockSlip(true);
     }
 }
 
 function handleSlipFileChange(input) {
     if (input.files && input.files[0]) {
+        isSkipSlipSelected = false;
         activeMockSlipUrl = null;
         const status = document.getElementById('slip-preview-status');
         const container = document.getElementById('slip-preview-container');
@@ -588,10 +712,33 @@ function handleSlipFileChange(input) {
             }
             if (status) {
                 status.style.display = 'block';
+                status.style.background = 'rgba(16,185,129,0.12)';
+                status.style.border = '1px solid rgba(16,185,129,0.3)';
+                status.style.color = '#34d399';
                 status.innerHTML = `✓ แนบไฟล์ ${file.name} เรียบร้อย`;
             }
         };
         reader.readAsDataURL(file);
+
+        const btnQuick = document.getElementById('btn-quick-slip');
+        if (btnQuick) {
+            btnQuick.style.borderColor = 'var(--border)';
+            btnQuick.style.background = 'transparent';
+            btnQuick.style.color = 'var(--text-secondary)';
+            btnQuick.style.boxShadow = 'none';
+        }
+        const btnNoSlip = document.getElementById('btn-no-slip');
+        if (btnNoSlip) {
+            btnNoSlip.style.borderColor = 'rgba(239,68,68,0.4)';
+            btnNoSlip.style.background = 'rgba(239,68,68,0.06)';
+            btnNoSlip.style.color = '#f87171';
+            btnNoSlip.style.boxShadow = 'none';
+        }
+        const btnSubmit = document.getElementById('btn-submit-order-payment');
+        if (btnSubmit) {
+            btnSubmit.textContent = 'ยืนยันการสั่งซื้อและแจ้งชำระเงิน 🚀';
+            btnSubmit.style.background = '';
+        }
     }
 }
 
@@ -645,16 +792,20 @@ async function submitOrderAndPayment() {
 
         // Step 2: Submit Payment & Mock Slip
         const fileInput = document.getElementById('slip-file-input');
-        const payMethod = document.querySelector('input[name="pay-method"]:checked').value;
+        const payMethod = document.querySelector('input[name="pay-method"]:checked')?.value || 'promptpay_qr';
 
         const formData = new FormData();
         formData.append('payment_method', payMethod);
-        formData.append('note', 'แจ้งชำระเงินจำลองผ่านหน้าร้าน');
 
-        if (fileInput.files.length > 0) {
+        if (isSkipSlipSelected || (!fileInput.files.length && !activeMockSlipUrl)) {
+            formData.append('skip_slip', 'true');
+            formData.append('note', 'สั่งซื้อโดยยังไม่ได้แนบสลิป (ค้างชำระ/ตัวอย่างยกเลิก)');
+        } else if (fileInput.files.length > 0) {
             formData.append('slip_image', fileInput.files[0]);
+            formData.append('note', 'แนบไฟล์สลิปจริงผ่านหน้าร้าน');
         } else {
             formData.append('slip_mock_url', activeMockSlipUrl);
+            formData.append('note', 'แจ้งชำระเงินจำลองผ่านหน้าร้าน (แนบสลิปจำลอง)');
         }
 
         const payRes = await fetch(`/api/orders/${orderId}/payment`, {
@@ -670,7 +821,12 @@ async function submitOrderAndPayment() {
 
         closeCheckoutModal();
         fetchCart();
-        showToast('🎉 สั่งซื้อและส่งหลักฐานสำเร็จ! กรุณารอแอดมินยืนยัน');
+        
+        if (isSkipSlipSelected || (!fileInput.files.length && !activeMockSlipUrl)) {
+            showToast('🎉 สั่งซื้อสำเร็จ (ไม่มีสลิป) สถานะ: รอตรวจสอบ/รอชำระเงิน');
+        } else {
+            showToast('🎉 สั่งซื้อและส่งหลักฐานสำเร็จ! กรุณารอแอดมินยืนยัน');
+        }
         openOrdersModal();
 
     } catch (err) {
@@ -804,7 +960,7 @@ async function loadMyOrders() {
 
                 <div style="font-size:0.82rem; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
                     <span>ช่องทาง: ${ord.payment_method === 'promptpay_qr' ? 'PromptPay QR' : 'โอนเงิน'}</span>
-                    ${ord.slip_image_url || ord.payment_status === 'submitted' || ord.status === 'confirmed' ? `<button type="button" class="btn btn-secondary btn-sm" onclick="viewSlipModal('${ord.slip_image_url || '/api/orders/' + ord.order_id + '/slip'}', '${ord.order_number}', ${ord.total_amount}, '${ord.payment_method}')" style="font-size:0.8rem; padding:4px 10px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🔍 ดูหลักฐานสลิปจำลอง</button>` : ''}
+                    ${ord.slip_image_url ? `<button type="button" class="btn btn-secondary btn-sm" onclick="viewSlipModal('${ord.slip_image_url || '/api/orders/' + ord.order_id + '/slip'}', '${ord.order_number}', ${ord.total_amount}, '${ord.payment_method}')" style="font-size:0.8rem; padding:4px 10px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🔍 ดูหลักฐานสลิปจำลอง</button>` : '<span style="color:#f87171; font-size:0.8rem; font-weight:600;">⚠️ ยังไม่ได้แนบสลิป (ค้างชำระ)</span>'}
                 </div>
             `;
             container.appendChild(ordCard);

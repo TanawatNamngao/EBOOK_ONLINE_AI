@@ -133,6 +133,10 @@ async function loadDashboardStats() {
         tbody.innerHTML = '';
         pendingOrders.slice(0, 5).forEach(o => {
             const tr = document.createElement('tr');
+            const slipBtn = o.slip_image_url 
+                ? `<button class="btn btn-primary btn-sm" onclick="openSlipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})">🔍 ตรวจสอบสลิป</button>`
+                : `<button class="btn btn-warning btn-sm" style="background:rgba(245,158,11,0.15); border:1px solid #f59e0b; color:#fbbf24; font-size:0.8rem; font-weight:600;" onclick="openSlipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})">⚠️ ตรวจสอบ (ไม่มีสลิป)</button>`;
+
             tr.innerHTML = `
                 <td><strong style="color:#38bdf8;">${o.order_number}</strong></td>
                 <td>${o.full_name} (${o.username})</td>
@@ -140,9 +144,7 @@ async function loadDashboardStats() {
                 <td>${o.payment_method === 'promptpay_qr' ? 'PromptPay QR' : 'โอนเงิน'}</td>
                 <td><span class="status-badge status-pending">รอตรวจสอบ</span></td>
                 <td>
-                    <button class="btn btn-primary btn-sm" onclick="openSlipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})">
-                        🔍 ตรวจสอบสลิป
-                    </button>
+                    ${slipBtn}
                 </td>
             `;
             tbody.appendChild(tr);
@@ -204,23 +206,38 @@ function renderAdminOrders(orders) {
     tbody.innerHTML = '';
     orders.forEach(o => {
         const tr = document.createElement('tr');
-        const itemsSummary = o.items ? o.items.map(i => `${i.title} (฿${i.price_at_purchase})`).join('<br>') : '-';
+        const itemsSummary = (o.items && o.items.length > 0) 
+            ? o.items.map(i => `${i.title} (฿${i.price_at_purchase})`).join('<br>') 
+            : '<span style="color:var(--text-muted); font-size:0.8rem;">- ไม่พบข้อมูลสินค้า -</span>';
         
         let statusClass = o.status === 'confirmed' ? 'status-confirmed' : (o.status === 'pending' ? 'status-pending' : 'status-cancelled');
         let statusText = o.status === 'confirmed' ? '✓ ยืนยันแล้ว' : (o.status === 'pending' ? '⏳ รอตรวจสอบ' : '✕ ยกเลิก');
 
         let actionBtns = '';
         if (o.status === 'pending') {
-            actionBtns = `
-                <div style="display:flex; gap:6px;">
-                    <button class="btn btn-primary btn-sm" onclick="openSlipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})">
-                        ตรวจสลิป
-                    </button>
-                    <button class="btn btn-secondary btn-sm" style="color:var(--danger);" onclick="updateOrderStatus(${o.order_id}, 'cancelled')">
-                        ปฏิเสธ
-                    </button>
-                </div>
-            `;
+            if (o.slip_image_url) {
+                actionBtns = `
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-primary btn-sm" onclick="openSlipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})">
+                            ตรวจสลิป
+                        </button>
+                        <button class="btn btn-secondary btn-sm" style="color:var(--danger); border-color:var(--danger);" onclick="updateOrderStatus(${o.order_id}, 'cancelled')">
+                            ปฏิเสธ
+                        </button>
+                    </div>
+                `;
+            } else {
+                actionBtns = `
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-warning btn-sm" style="background:rgba(245,158,11,0.15); border:1px solid #f59e0b; color:#fbbf24; font-size:0.8rem; font-weight:600;" onclick="openSlipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})">
+                            ⚠️ ตรวจสอบ (ไม่มีสลิป)
+                        </button>
+                        <button class="btn btn-secondary btn-sm" style="color:var(--danger); border-color:var(--danger); font-weight:600;" onclick="updateOrderStatus(${o.order_id}, 'cancelled')">
+                            ปฏิเสธ
+                        </button>
+                    </div>
+                `;
+            }
         } else if (o.status === 'confirmed') {
             actionBtns = `<span style="color:#10b981; font-size:0.85rem;">อนุมัติสิทธิ์แล้ว</span>`;
         } else {
@@ -243,7 +260,7 @@ function renderAdminOrders(orders) {
                     <button class="btn btn-secondary btn-sm" onclick="openSlipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})">
                         📷 ดูสลิป
                     </button>
-                ` : '<span style="color:var(--text-muted); font-size:0.8rem;">ไม่มีสลิป</span>'}
+                ` : '<span style="color:#f87171; background:rgba(239,68,68,0.15); padding:3px 8px; border-radius:4px; font-size:0.78rem; border:1px solid rgba(239,68,68,0.3); font-weight:600; display:inline-block;">⚠️ ไม่มีสลิป</span>'}
             </td>
             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
             <td>${actionBtns}</td>
@@ -256,21 +273,72 @@ function renderAdminOrders(orders) {
 function openSlipModal(order) {
     currentActiveOrder = order;
     const modal = document.getElementById('slip-modal');
-    document.getElementById('slip-modal-title').textContent = `ตรวจสอบหลักฐานคำสั่งซื้อ: ${order.order_number}`;
+    const imgContainer = document.getElementById('slip-img-container');
+    const alertNoSlip = document.getElementById('slip-no-evidence-alert');
     const imgEl = document.getElementById('slip-modal-img');
-    const dynamicSlipUrl = `/api/orders/${order.order_id}/slip?t=${Date.now()}`;
-    imgEl.src = dynamicSlipUrl;
-    imgEl.onerror = () => {
-        imgEl.onerror = null;
-        imgEl.src = `/api/slips/preview?amount=${order.total_amount}&name=${encodeURIComponent(order.full_name || order.username || 'ลูกค้า')}&order_number=${encodeURIComponent(order.order_number)}&method=${order.payment_method || 'promptpay_qr'}`;
-    };
+    const btnApprove = document.getElementById('btn-approve-slip');
+    const btnReject = document.getElementById('btn-reject-slip');
+    const titleEl = document.getElementById('slip-modal-title');
+
+    const hasSlip = !!order.slip_image_url;
+
+    if (!hasSlip) {
+        // ORDER HAS NO SLIP!
+        titleEl.innerHTML = `⚠️ ตรวจสอบคำสั่งซื้อ: <span style="color:#f87171;">${order.order_number}</span> (ไม่มีสลิป)`;
+        if (imgContainer) imgContainer.style.display = 'none';
+        if (imgEl) {
+            imgEl.src = '';
+            imgEl.onerror = null;
+        }
+        if (alertNoSlip) alertNoSlip.style.display = 'block';
+
+        if (btnApprove) {
+            btnApprove.style.opacity = '0.5';
+            btnApprove.textContent = '⚠️ อนุมัติ (ไม่มีสลิป)';
+            btnApprove.title = 'คำสั่งซื้อนี้ยังไม่มีสลิปหลักฐานการโอนเงิน';
+        }
+        if (btnReject) {
+            btnReject.style.background = '#ef4444';
+            btnReject.style.color = '#ffffff';
+            btnReject.style.fontWeight = 'bold';
+            btnReject.textContent = '✕ ปฏิเสธคำสั่งซื้อ';
+        }
+    } else {
+        // ORDER HAS SLIP
+        titleEl.textContent = `ตรวจสอบหลักฐานคำสั่งซื้อ: ${order.order_number}`;
+        if (alertNoSlip) alertNoSlip.style.display = 'none';
+        if (imgContainer) imgContainer.style.display = 'block';
+
+        if (imgEl) {
+            const dynamicSlipUrl = `/api/orders/${order.order_id}/slip?t=${Date.now()}`;
+            imgEl.src = dynamicSlipUrl;
+            imgEl.onerror = () => {
+                imgEl.onerror = null;
+                imgEl.src = `/api/slips/preview?amount=${order.total_amount}&name=${encodeURIComponent(order.full_name || order.username || 'ลูกค้า')}&order_number=${encodeURIComponent(order.order_number)}&method=${order.payment_method || 'promptpay_qr'}`;
+            };
+        }
+
+        if (btnApprove) {
+            btnApprove.style.opacity = '1';
+            btnApprove.textContent = '✓ อนุมัติ & ปลดล็อกดาวน์โหลด';
+            btnApprove.title = '';
+        }
+        if (btnReject) {
+            btnReject.style.background = 'transparent';
+            btnReject.style.color = 'var(--danger)';
+            btnReject.style.fontWeight = 'normal';
+            btnReject.textContent = '✕ ปฏิเสธคำสั่งซื้อ';
+        }
+    }
 
     const details = document.getElementById('slip-order-details');
     details.innerHTML = `
         <div><strong>ผู้สั่งซื้อ:</strong> ${order.full_name} (${order.username}) | โทร: ${order.phone || '-'}</div>
         <div><strong>ยอดชำระ:</strong> <span style="color:#38bdf8; font-weight:bold; font-size:1.1rem;">฿${parseFloat(order.total_amount).toFixed(2)}</span></div>
-        <div><strong>ช่องทางจำลอง:</strong> ${order.payment_method === 'promptpay_qr' ? 'PromptPay QR' : 'โอนผ่านธนาคาร'}</div>
-        <div><strong>วันที่แจ้งโอน:</strong> ${order.paid_at || order.created_at}</div>
+        <div><strong>ช่องทาง:</strong> ${order.payment_method === 'promptpay_qr' ? 'PromptPay QR' : 'โอนผ่านธนาคาร'}</div>
+        <div><strong>สถานะหลักฐาน:</strong> ${hasSlip ? '<span style="color:#34d399; font-weight:600;">✓ แนบสลิปแล้ว</span>' : '<span style="color:#f87171; font-weight:bold;">✕ ยังไม่ได้แนบสลิป (ค้างชำระ)</span>'}</div>
+        <div><strong>วันที่สร้างรายการ:</strong> ${order.created_at || '-'}</div>
+        ${order.note ? `<div><strong>หมายเหตุ:</strong> <span style="color:var(--text-muted);">${order.note}</span></div>` : ''}
     `;
 
     modal.classList.add('active');
@@ -283,13 +351,19 @@ function closeSlipModal() {
 
 async function confirmOrderFromSlip() {
     if (!currentActiveOrder) return;
+    if (!currentActiveOrder.slip_image_url) {
+        if (!confirm('⚠️ คำเตือน: คำสั่งซื้อนี้ยังไม่มีสลิปหลักฐานการชำระเงิน!\n\nคุณแน่ใจหรือไม่ว่าต้องการอนุมัติและปลดล็อกสิทธิ์ดาวน์โหลดให้ลูกค้า?')) {
+            return;
+        }
+    }
     await updateOrderStatus(currentActiveOrder.order_id, 'confirmed');
     closeSlipModal();
 }
 
 async function cancelOrderFromSlip() {
     if (!currentActiveOrder) return;
-    if (!confirm('ต้องการปฏิเสธคำสั่งซื้อนี้หรือไม่?')) return;
+    const reason = !currentActiveOrder.slip_image_url ? ' (เนื่องจากไม่แนบสลิป)' : '';
+    if (!confirm(`ต้องการปฏิเสธคำสั่งซื้อนี้หรือไม่?${reason}`)) return;
     await updateOrderStatus(currentActiveOrder.order_id, 'cancelled');
     closeSlipModal();
 }
