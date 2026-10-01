@@ -16,10 +16,20 @@ const pool = new Pool({
     allowExitOnIdle: true
 });
 
-// Test connection on load
-pool.query('SELECT NOW()')
-    .then(r => console.log('☁️  Connected to Supabase PostgreSQL successfully! (Cloud Realtime Active)'))
-    .catch(err => console.warn('⚠️  Supabase connection note:', err.message));
+// Test connection on load & auto-sync sequences
+pool.query(`
+    SELECT setval(pg_get_serial_sequence('payments', 'payment_id'), COALESCE((SELECT MAX(payment_id) FROM payments), 0) + 1, false);
+    SELECT setval(pg_get_serial_sequence('orders', 'order_id'), COALESCE((SELECT MAX(order_id) FROM orders), 0) + 1, false);
+    SELECT setval(pg_get_serial_sequence('order_items', 'order_item_id'), COALESCE((SELECT MAX(order_item_id) FROM order_items), 0) + 1, false);
+    SELECT setval(pg_get_serial_sequence('users', 'user_id'), COALESCE((SELECT MAX(user_id) FROM users), 0) + 1, false);
+    SELECT setval(pg_get_serial_sequence('ebooks', 'ebook_id'), COALESCE((SELECT MAX(ebook_id) FROM ebooks), 0) + 1, false);
+    SELECT setval(pg_get_serial_sequence('download_links', 'download_id'), COALESCE((SELECT MAX(download_id) FROM download_links), 0) + 1, false);
+`).then(() => console.log('☁️  Connected to Supabase PostgreSQL successfully! (Cloud Realtime Active & Sequences Aligned)'))
+  .catch(err => {
+      pool.query('SELECT NOW()')
+          .then(() => console.log('☁️  Connected to Supabase PostgreSQL successfully! (Cloud Realtime Active)'))
+          .catch(e => console.warn('⚠️  Supabase connection note:', e.message));
+  });
 
 // Helper: Sync new user to Supabase
 async function syncUserToSupabase(user) {

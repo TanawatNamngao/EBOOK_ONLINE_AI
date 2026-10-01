@@ -607,6 +607,14 @@ app.post('/api/orders/checkout', (req, res) => {
                 { order_id: orderInfo.orderId, order_number: orderInfo.orderNumber, user_id: user.user_id, total_amount: orderInfo.totalAmount, status: 'pending' },
                 cartItems
             );
+            supabaseSync.syncPaymentToSupabase({
+                order_id: orderInfo.orderId,
+                payment_method: 'promptpay_qr',
+                payment_status: 'pending',
+                slip_image_url: null,
+                amount: orderInfo.totalAmount,
+                note: 'รอการแจ้งชำระเงินและแนบสลิป'
+            });
             supabaseSync.clearCartInSupabase(user.user_id);
         } catch (e) {}
 
