@@ -171,6 +171,35 @@ async function syncFromSupabaseToSQLite(sqliteDb) {
     try {
         console.log('🔄 Checking for new records from Supabase Cloud to SQLite...');
         sqliteDb.pragma('foreign_keys = OFF');
+        // 0. Sync Categories
+        const remoteCats = await pool.query('SELECT category_id, name, slug, description, is_active FROM categories ORDER BY category_id ASC');
+        const insertCat = sqliteDb.prepare(`
+            INSERT OR REPLACE INTO categories (category_id, name, slug, description, is_active)
+            VALUES (?, ?, ?, ?, ?)
+        `);
+        for (const c of remoteCats.rows) {
+            insertCat.run(c.category_id, c.name, c.slug, c.description, c.is_active !== undefined ? (c.is_active ? 1 : 0) : 1);
+        }
+
+        // 0.1 Sync Authors
+        const remoteAuthors = await pool.query('SELECT author_id, name, bio, email FROM authors ORDER BY author_id ASC');
+        const insertAuthor = sqliteDb.prepare(`
+            INSERT OR REPLACE INTO authors (author_id, name, bio, email)
+            VALUES (?, ?, ?, ?)
+        `);
+        for (const a of remoteAuthors.rows) {
+            insertAuthor.run(a.author_id, a.name, a.bio, a.email);
+        }
+
+        // 0.2 Sync E-Books
+        const remoteEbooks = await pool.query('SELECT ebook_id, category_id, author_id, title, isbn, description, price, cover_image, sample_file_url, full_file_url, is_published, created_at, updated_at FROM ebooks ORDER BY ebook_id ASC');
+        const insertEbook = sqliteDb.prepare(`
+            INSERT OR REPLACE INTO ebooks (ebook_id, category_id, author_id, title, isbn, description, price, cover_image, sample_file_url, full_file_url, is_published, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const b of remoteEbooks.rows) {
+            insertEbook.run(b.ebook_id, b.category_id, b.author_id, b.title, b.isbn, b.description, b.price, b.cover_image, b.sample_file_url, b.full_file_url, b.is_published, toSqliteDate(b.created_at), toSqliteDate(b.updated_at));
+        }
 
         // 1. Sync Users
         const remoteUsers = await pool.query('SELECT user_id, role_id, username, email, password_hash, full_name, phone, created_at FROM users ORDER BY user_id ASC');
