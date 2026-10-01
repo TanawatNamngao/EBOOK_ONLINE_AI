@@ -18,6 +18,7 @@ let allAdminAuthors = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     loadDashboardStats();
+    checkSupabaseStatus();
     loadAdminOrders();
     loadAdminEbooks();
     loadAdminCategories();
@@ -156,6 +157,61 @@ async function loadDashboardStats() {
 }
 
 // ====================================================================
+// Supabase Cloud Real-time Status & Sync Handlers
+// ====================================================================
+
+async function checkSupabaseStatus() {
+    try {
+        const res = await fetch('/api/admin/supabase-status');
+        const data = await res.json();
+        const tag = document.getElementById('supabase-status-tag');
+        if (tag) {
+            if (data.connected) {
+                tag.style.background = 'rgba(16, 185, 129, 0.2)';
+                tag.style.color = '#3ecf8e';
+                tag.style.borderColor = 'rgba(16, 185, 129, 0.45)';
+                tag.innerHTML = `<span style="width: 7px; height: 7px; background: #3ecf8e; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px #3ecf8e;"></span> Cloud Real-time Active (${data.cloud_tables.orders} ออเดอร์ / ${data.latency_ms}ms)`;
+            } else {
+                tag.style.background = 'rgba(239, 68, 68, 0.2)';
+                tag.style.color = '#f87171';
+                tag.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+                tag.innerHTML = `<span style="width: 7px; height: 7px; background: #ef4444; border-radius: 50%; display: inline-block;"></span> Cloud Offline: Local Cache Active`;
+            }
+        }
+    } catch (e) {
+        console.warn('Supabase status check:', e);
+    }
+}
+
+async function syncSupabaseDataNow() {
+    const btn = document.getElementById('btn-sync-supabase');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ กำลังซิงค์กับ Supabase...';
+    }
+    try {
+        const res = await fetch('/api/admin/sync-supabase', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ ' + data.message, 'success');
+            await loadDashboardStats();
+            await checkSupabaseStatus();
+            await loadAdminOrders();
+            await loadAllReports();
+        } else {
+            showToast('⚠️ ไม่สามารถซิงค์ได้: ' + (data.error || 'Unknown error'), 'error');
+        }
+    } catch (err) {
+        showToast('❌ ข้อผิดพลาดในการเชื่อมต่อ Supabase: ' + err.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<span>🔄</span> ซิงค์ข้อมูล Cloud ทันที';
+        }
+    }
+}
+
+// ====================================================================
 // 2. Orders Management
 // ====================================================================
 
@@ -239,7 +295,14 @@ function renderAdminOrders(orders) {
                 `;
             }
         } else if (o.status === 'confirmed') {
-            actionBtns = `<span style="color:#10b981; font-size:0.85rem;">อนุมัติสิทธิ์แล้ว</span>`;
+            actionBtns = `
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="color:#10b981; font-size:0.85rem;">อนุมัติสิทธิ์แล้ว</span>
+                    <button class="btn btn-secondary btn-sm" style="color:#ef4444; border-color:rgba(239,68,68,0.4); padding:2px 8px; font-size:0.75rem;" onclick="updateOrderStatus(${o.order_id}, 'cancelled')" title="ยกเลิกคำสั่งซื้อนี้">
+                        ✕ ยกเลิก
+                    </button>
+                </div>
+            `;
         } else {
             actionBtns = `<span style="color:var(--danger); font-size:0.85rem;">ยกเลิกแล้ว</span>`;
         }
@@ -293,9 +356,11 @@ function openSlipModal(order) {
         if (alertNoSlip) alertNoSlip.style.display = 'block';
 
         if (btnApprove) {
-            btnApprove.style.opacity = '0.5';
-            btnApprove.textContent = '⚠️ อนุมัติ (ไม่มีสลิป)';
-            btnApprove.title = 'คำสั่งซื้อนี้ยังไม่มีสลิปหลักฐานการโอนเงิน';
+            btnApprove.disabled = true;
+            btnApprove.style.opacity = '0.35';
+            btnApprove.style.cursor = 'not-allowed';
+            btnApprove.textContent = '⛔ ไม่อนุญาตให้อนุมัติ (ไม่มีสลิป)';
+            btnApprove.title = 'คำสั่งซื้อนี้ยังไม่มีสลิปหลักฐานการโอนเงิน จึงไม่อนุญาตให้อนุมัติเข้าระบบ';
         }
         if (btnReject) {
             btnReject.style.background = '#ef4444';
@@ -319,7 +384,9 @@ function openSlipModal(order) {
         }
 
         if (btnApprove) {
+            btnApprove.disabled = false;
             btnApprove.style.opacity = '1';
+            btnApprove.style.cursor = 'pointer';
             btnApprove.textContent = '✓ อนุมัติ & ปลดล็อกดาวน์โหลด';
             btnApprove.title = '';
         }

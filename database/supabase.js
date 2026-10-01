@@ -123,7 +123,26 @@ async function syncOrderStatusToSupabase(orderId, status, sqliteDb = null) {
     try {
         await pool.query(`UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE order_id = $2;`, [status, orderId]);
         if (status === 'confirmed') {
-            await pool.query(`UPDATE payments SET payment_status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE order_id = $1;`, [orderId]);
+            if (sqliteDb) {
+                const pay = sqliteDb.prepare('SELECT * FROM payments WHERE order_id = ?').get(orderId);
+                const ord = sqliteDb.prepare('SELECT * FROM orders WHERE order_id = ?').get(orderId);
+                await pool.query(`
+                    INSERT INTO payments (order_id, payment_method, payment_status, slip_image_url, amount, note, verified_at)
+                    VALUES ($1, $2, 'verified', $3, $4, $5, CURRENT_TIMESTAMP)
+                    ON CONFLICT (order_id) DO UPDATE 
+                    SET payment_status = 'verified',
+                        verified_at = CURRENT_TIMESTAMP,
+                        amount = EXCLUDED.amount;
+                `, [
+                    orderId,
+                    pay?.payment_method || 'promptpay_qr',
+                    pay?.slip_image_url || null,
+                    pay?.amount || ord?.total_amount || 0,
+                    pay?.note || 'ยืนยันโดยผู้ดูแลระบบ'
+                ]);
+            } else {
+                await pool.query(`UPDATE payments SET payment_status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE order_id = $1;`, [orderId]);
+            }
 
             // Sync download links from SQLite if available, or generate directly on Supabase
             if (sqliteDb) {
