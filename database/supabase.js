@@ -39,7 +39,8 @@ async function syncUserToSupabase(user) {
             user.full_name,
             user.phone || null
         ]);
-        console.log(`☁️  Synced user "${user.username}" to Supabase Cloud!`);
+        await pool.query('INSERT INTO carts (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING;', [user.user_id]);
+        console.log(`☁️  Synced user "${user.username}" and their cart to Supabase Cloud!`);
     } catch (err) {
         console.error('⚠️  Failed to sync user to Supabase:', err.message);
     }
