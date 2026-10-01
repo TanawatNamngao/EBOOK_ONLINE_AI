@@ -1301,10 +1301,83 @@ app.put('/api/admin/categories/:id', (req, res) => {
     }
 });
 
-// Admin Authors and Users
+// Admin Authors Management
 app.get('/api/admin/authors', (req, res) => {
-    const authors = db.prepare('SELECT * FROM authors ORDER BY name ASC').all();
-    res.json(authors);
+    try {
+        const authors = db.prepare(`
+            SELECT a.*, COUNT(b.ebook_id) AS book_count
+            FROM authors a
+            LEFT JOIN ebooks b ON a.author_id = b.author_id
+            GROUP BY a.author_id
+            ORDER BY a.name ASC
+        `).all();
+        res.json(authors);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Add new Author
+app.post('/api/admin/authors', async (req, res) => {
+    try {
+        const { name, bio, email } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'กรุณาระบุชื่อผู้แต่ง / นักเขียน' });
+        }
+
+        const insert = db.prepare(`
+            INSERT INTO authors (name, bio, email)
+            VALUES (?, ?, ?)
+        `);
+        const result = insert.run(name.trim(), bio ? bio.trim() : null, email ? email.trim() : null);
+        const newAuthorId = result.lastInsertRowid;
+
+        // Sync to Supabase
+        try {
+            await supabaseSync.pool.query(`
+                INSERT INTO authors (author_id, name, bio, email)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (author_id) DO UPDATE SET 
+                    name = EXCLUDED.name, bio = EXCLUDED.bio, email = EXCLUDED.email;
+            `, [newAuthorId, name.trim(), bio ? bio.trim() : null, email ? email.trim() : null]);
+        } catch (syncErr) {
+            console.warn('⚠️ Supabase author sync note:', syncErr.message);
+        }
+
+        res.status(201).json({ 
+            message: `เพิ่มผู้แต่ง "${name.trim()}" เรียบร้อยแล้ว`,
+            author_id: newAuthorId,
+            author: { author_id: newAuthorId, name: name.trim(), bio: bio ? bio.trim() : '', email: email ? email.trim() : '' }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete Author (ตรวจสอบไม่ให้ลบผู้แต่งที่มีหนังสืออยู่ในระบบ)
+app.delete('/api/admin/authors/:id', async (req, res) => {
+    try {
+        const authorId = req.params.id;
+        const author = db.prepare('SELECT name FROM authors WHERE author_id = ?').get(authorId);
+        if (!author) return res.status(404).json({ error: 'ไม่พบผู้แต่งที่ต้องการลบ' });
+
+        const bookCountRow = db.prepare('SELECT COUNT(*) as count FROM ebooks WHERE author_id = ?').get(authorId);
+        if (bookCountRow && bookCountRow.count > 0) {
+            return res.status(400).json({ 
+                error: `ไม่สามารถลบผู้แต่ง "${author.name}" ได้ เนื่องจากมีหนังสือในระบบผูกอยู่ ${bookCountRow.count} เล่ม` 
+            });
+        }
+
+        db.prepare('DELETE FROM authors WHERE author_id = ?').run(authorId);
+
+        try {
+            await supabaseSync.pool.query('DELETE FROM authors WHERE author_id = $1', [authorId]);
+        } catch (e) {}
+
+        res.json({ message: `ลบผู้แต่ง "${author.name}" เรียบร้อยแล้ว` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 // Note: /api/admin/users is defined above with order & spent statistics
 

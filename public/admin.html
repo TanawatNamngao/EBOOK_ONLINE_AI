@@ -260,6 +260,35 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Authors Card (จัดการรายชื่อผู้แต่ง/นักเขียน) -->
+                <div class="data-table-card" style="margin-top:24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h3>จัดการรายชื่อนักเขียน / ผู้แต่ง (Authors)</h3>
+                            <p style="color:var(--text-secondary); font-size:0.85rem;">เพิ่ม แก้ไข และดูจำนวนหนังสือของนักเขียนแต่ละท่าน</p>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="openAddAuthorModal()">+ เพิ่มผู้แต่งใหม่</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>รหัส ID</th>
+                                    <th>ชื่อนักเขียน / ผู้แต่ง</th>
+                                    <th>อีเมล</th>
+                                    <th>ประวัติย่อ</th>
+                                    <th>จำนวนหนังสือ</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-authors-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- ========================================================= -->
@@ -567,7 +596,10 @@ ORDER BY total_spent DESC;
                         </select>
                     </div>
                     <div>
-                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ผู้แต่ง *</label>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="font-size:0.88rem;">ผู้แต่ง *</label>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openAddAuthorModal('new-book-author')" style="font-size:0.75rem; padding:2px 8px; border-radius:4px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">+ เพิ่มผู้แต่งใหม่</button>
+                        </div>
                         <select id="new-book-author" required class="sort-select" style="width:100%;">
                             <!-- Loaded via JS -->
                         </select>
@@ -623,7 +655,10 @@ ORDER BY total_spent DESC;
                         </select>
                     </div>
                     <div>
-                        <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ผู้แต่ง *</label>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="font-size:0.88rem;">ผู้แต่ง *</label>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openAddAuthorModal('edit-book-author')" style="font-size:0.75rem; padding:2px 8px; border-radius:4px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">+ เพิ่มผู้แต่งใหม่</button>
+                        </div>
                         <select id="edit-book-author" required class="sort-select" style="width:100%;">
                             <!-- Loaded via JS -->
                         </select>
@@ -690,9 +725,32 @@ ORDER BY total_spent DESC;
         </div>
     </div>
 
+    <!-- Add Author Modal (จัดการรายชื่อผู้แต่ง/นักเขียนใหม่) -->
+    <div class="modal-overlay" id="add-author-modal" style="z-index: 220;">
+        <div class="modal-card" style="max-width:500px;">
+            <button class="modal-close" onclick="closeAddAuthorModal()">✕</button>
+            <h2 style="font-size:1.3rem; margin-bottom:16px;">✍️ เพิ่มนักเขียน / ผู้แต่งใหม่</h2>
+            <form id="add-author-form" onsubmit="submitNewAuthor(event)">
+                <div style="margin-bottom:12px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ชื่อผู้แต่ง / นามปากกา *</label>
+                    <input type="text" id="new-author-name" required placeholder="เช่น ดร. สมเกียรติ ปัญญาเลิศ" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">อีเมลติดต่อ (ถ้ามี)</label>
+                    <input type="email" id="new-author-email" placeholder="author@example.com" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">ประวัติย่อ / ข้อมูลแนะนำตัว</label>
+                    <textarea id="new-author-bio" rows="3" placeholder="ประวัติการศึกษา ประสบการณ์ หรือผลงานเด่น..." class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">บันทึกข้อมูลผู้แต่ง ➔</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="/js/admin.js?v=20261001_v4"></script>
+    <script src="/js/admin.js?v=20261001_v6"></script>
 </body>
 </html>

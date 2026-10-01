@@ -510,14 +510,111 @@ async function loadAuthorsAndCategories() {
         const catRes = await fetch('/api/categories');
         allAdminCategories = await catRes.json();
         const catSelect = document.getElementById('new-book-category');
-        catSelect.innerHTML = allAdminCategories.map(c => `<option value="${c.category_id}">${c.name}</option>`).join('');
+        if (catSelect) catSelect.innerHTML = allAdminCategories.map(c => `<option value="${c.category_id}">${c.name}</option>`).join('');
 
         const authRes = await fetch('/api/admin/authors');
         allAdminAuthors = await authRes.json();
         const authSelect = document.getElementById('new-book-author');
-        authSelect.innerHTML = allAdminAuthors.map(a => `<option value="${a.author_id}">${a.name}</option>`).join('');
+        if (authSelect) authSelect.innerHTML = allAdminAuthors.map(a => `<option value="${a.author_id}">${a.name}</option>`).join('');
+
+        loadAdminAuthorsTable();
     } catch (err) {
         console.error('Load authors/cats error:', err);
+    }
+}
+
+function loadAdminAuthorsTable() {
+    const tbody = document.getElementById('admin-authors-tbody');
+    if (!tbody || !allAdminAuthors) return;
+    tbody.innerHTML = '';
+
+    allAdminAuthors.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>#${a.author_id}</td>
+            <td><strong>${a.name}</strong></td>
+            <td>${a.email ? `<a href="mailto:${a.email}" style="color:#38bdf8;">${a.email}</a>` : '<span style="color:var(--text-muted);">-</span>'}</td>
+            <td style="color:var(--text-secondary); font-size:0.85rem; max-width:250px;">${a.bio || '-'}</td>
+            <td><strong style="color:#10b981;">${a.book_count || 0} เล่ม</strong></td>
+            <td>
+                <button class="btn btn-sm" onclick="deleteAuthor(${a.author_id}, '${a.name.replace(/'/g, "\\'")}', ${a.book_count || 0})" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-size:0.8rem; padding:4px 8px; border-radius:4px; cursor:pointer;">
+                    🗑️ ลบ
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+let targetAuthorSelectId = null;
+
+function openAddAuthorModal(targetSelectId = null) {
+    targetAuthorSelectId = targetSelectId;
+    document.getElementById('add-author-modal').classList.add('active');
+}
+
+function closeAddAuthorModal() {
+    document.getElementById('add-author-modal').classList.remove('active');
+    document.getElementById('add-author-form').reset();
+    targetAuthorSelectId = null;
+}
+
+async function submitNewAuthor(e) {
+    e.preventDefault();
+    const name = document.getElementById('new-author-name').value;
+    const email = document.getElementById('new-author-email').value;
+    const bio = document.getElementById('new-author-bio').value;
+
+    try {
+        const res = await fetch('/api/admin/authors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, bio })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(`✓ ${data.message || 'เพิ่มผู้แต่งเรียบร้อยแล้ว'}`);
+            closeAddAuthorModal();
+            await loadAuthorsAndCategories();
+
+            // If opened from a book modal, select the new author immediately!
+            if (targetAuthorSelectId) {
+                const selectEl = document.getElementById(targetAuthorSelectId);
+                if (selectEl) {
+                    selectEl.value = data.author_id;
+                }
+            }
+        } else {
+            showToast(data.error || 'เกิดข้อผิดพลาด', 'error');
+        }
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+async function deleteAuthor(authorId, authorName, bookCount) {
+    if (bookCount > 0) {
+        alert(`ไม่สามารถลบผู้แต่ง "${authorName}" ได้\nเนื่องจากมีหนังสือในระบบผูกอยู่ ${bookCount} เล่ม (กรุณาลบหรือเปลี่ยนผู้แต่งของหนังสือก่อน)`);
+        return;
+    }
+
+    if (!confirm(`คุณต้องการลบผู้แต่ง "${authorName}" ใช่หรือไม่?`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/admin/authors/${authorId}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(`✓ ${data.message || 'ลบผู้แต่งเรียบร้อยแล้ว'}`);
+            loadAuthorsAndCategories();
+        } else {
+            showToast(data.error || 'เกิดข้อผิดพลาดในการลบ', 'error');
+        }
+    } catch (err) {
+        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
     }
 }
 
