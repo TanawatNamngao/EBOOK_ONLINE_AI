@@ -1069,7 +1069,7 @@ app.post('/api/admin/ebooks', (req, res) => {
 // Update E-Book
 app.put('/api/admin/ebooks/:id', (req, res) => {
     try {
-        const { category_id, author_id, title, isbn, description, price, cover_image, is_published } = req.body;
+        const { category_id, author_id, title, isbn, description, price, cover_image, is_published, full_file_url } = req.body;
         db.prepare(`
             UPDATE ebooks 
             SET category_id = COALESCE(?, category_id),
@@ -1079,10 +1079,11 @@ app.put('/api/admin/ebooks/:id', (req, res) => {
                 description = COALESCE(?, description),
                 price = COALESCE(?, price),
                 cover_image = COALESCE(?, cover_image),
+                full_file_url = COALESCE(?, full_file_url),
                 is_published = COALESCE(?, is_published),
                 updated_at = CURRENT_TIMESTAMP
             WHERE ebook_id = ?
-        `).run(category_id, author_id, title, isbn, description, price ? parseFloat(price) : null, cover_image, is_published, req.params.id);
+        `).run(category_id, author_id, title, isbn, description, price ? parseFloat(price) : null, cover_image, full_file_url, is_published, req.params.id);
 
         res.json({ message: 'ปรับปรุงข้อมูลหนังสือสำเร็จ' });
     } catch (err) {
@@ -1100,6 +1101,60 @@ app.put('/api/admin/ebooks/:id/toggle', (req, res) => {
         db.prepare('UPDATE ebooks SET is_published = ?, updated_at = CURRENT_TIMESTAMP WHERE ebook_id = ?').run(newStatus, req.params.id);
         res.json({ message: `เปลี่ยนสถานะเป็น ${newStatus === 1 ? 'พร้อมขาย' : 'ปิดการขาย'} เรียบร้อย`, is_published: newStatus });
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete E-Book (จัดการลบหนังสือ ป้องกัน Foreign Key Constraint ด้วยการตรวจสอบประวัติคำสั่งซื้อ)
+app.delete('/api/admin/ebooks/:id', async (req, res) => {
+    try {
+        const ebookId = parseInt(req.params.id);
+        const book = db.prepare('SELECT * FROM ebooks WHERE ebook_id = ?').get(ebookId);
+        if (!book) {
+            return res.status(404).json({ error: 'ไม่พบหนังสือที่ต้องการลบในระบบ' });
+        }
+
+        // 1. ตรวจสอบว่ามีประวัติการสั่งซื้อหนังสือเล่มนี้หรือไม่
+        const orderCountRow = db.prepare('SELECT COUNT(*) as count FROM order_items WHERE ebook_id = ?').get(ebookId);
+        const orderCount = orderCountRow ? orderCountRow.count : 0;
+        const force = req.query.force === 'true';
+
+        // หากมีประวัติการซื้อ และไม่ได้ระบุ force=true ให้แจ้งเตือนความปลอดภัยของข้อมูล
+        if (orderCount > 0 && !force) {
+            return res.status(400).json({
+                has_orders: true,
+                order_count: orderCount,
+                error: `หนังสือ "${book.title}" มีประวัติการสั่งซื้อแล้ว ${orderCount} รายการ เพื่อรักษาประวัติการสั่งซื้อและสิทธิ์ดาวน์โหลดของลูกค้า แนะนำให้ใช้ปุ่ม "ปิดการขาย" แทน หรือกดยืนยันหากต้องการลบประวัติที่เกี่ยวข้องทั้งหมด (Force Delete)`
+            });
+        }
+
+        // 2. ดำเนินการลบข้อมูล (ใช้ Transaction ป้องกันข้อมูลสูญหายกึ่งกลาง)
+        const deleteTransaction = db.transaction(() => {
+            if (force && orderCount > 0) {
+                db.prepare('DELETE FROM download_links WHERE ebook_id = ?').run(ebookId);
+                db.prepare('DELETE FROM order_items WHERE ebook_id = ?').run(ebookId);
+            }
+            db.prepare('DELETE FROM cart_items WHERE ebook_id = ?').run(ebookId);
+            db.prepare('DELETE FROM ebooks WHERE ebook_id = ?').run(ebookId);
+        });
+        deleteTransaction();
+
+        // 3. ซิงค์การลบข้อมูลไปยัง Supabase PostgreSQL (ถ้าเชื่อมต่ออยู่)
+        try {
+            if (force && orderCount > 0) {
+                await supabaseSync.pool.query('DELETE FROM download_links WHERE ebook_id = $1', [ebookId]);
+                await supabaseSync.pool.query('DELETE FROM order_items WHERE ebook_id = $1', [ebookId]);
+            }
+            await supabaseSync.pool.query('DELETE FROM cart_items WHERE ebook_id = $1', [ebookId]);
+            await supabaseSync.pool.query('DELETE FROM ebooks WHERE ebook_id = $1', [ebookId]);
+            console.log(`☁️ Synced deletion of E-Book ID #${ebookId} to Supabase`);
+        } catch (syncErr) {
+            console.warn('⚠️ Supabase sync delete notice:', syncErr.message);
+        }
+
+        res.json({ message: `ลบหนังสือ "${book.title}" เรียบร้อยแล้ว` });
+    } catch (err) {
+        console.error('Delete ebook error:', err);
         res.status(500).json({ error: err.message });
     }
 });

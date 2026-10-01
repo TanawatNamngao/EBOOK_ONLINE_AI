@@ -392,10 +392,13 @@ async function updateOrderStatus(orderId, newStatus) {
 // 3. E-Books Management
 // ====================================================================
 
+let allAdminEbooksList = [];
+
 async function loadAdminEbooks() {
     try {
         const res = await fetch('/api/admin/ebooks');
         const books = await res.json();
+        allAdminEbooksList = books;
         const tbody = document.getElementById('admin-ebooks-tbody');
         tbody.innerHTML = '';
 
@@ -416,12 +419,15 @@ async function loadAdminEbooks() {
                     </span>
                 </td>
                 <td>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn btn-secondary btn-sm" onclick="openEditEbookModal(${JSON.stringify(b).replace(/"/g, '&quot;')})">
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button class="btn btn-secondary btn-sm" onclick="openEditEbookModal(${b.ebook_id})">
                             ✏️ แก้ไข
                         </button>
                         <button class="btn btn-secondary btn-sm" onclick="toggleBookPublish(${b.ebook_id})">
                             ${b.is_published ? 'ปิดการขาย' : 'เปิดการขาย'}
+                        </button>
+                        <button class="btn btn-sm" onclick="deleteEbook(${b.ebook_id})" style="background:rgba(239, 68, 68, 0.15); color:#ef4444; border:1px solid rgba(239, 68, 68, 0.35); font-weight:500;">
+                            🗑️ ลบ
                         </button>
                     </div>
                 </td>
@@ -444,6 +450,58 @@ async function toggleBookPublish(ebookId) {
         }
     } catch (err) {
         showToast('เกิดข้อผิดพลาด', 'error');
+    }
+}
+
+async function deleteEbook(ebookId) {
+    const book = allAdminEbooksList.find(b => b.ebook_id == ebookId);
+    const bookTitle = book ? book.title : `รหัส #${ebookId}`;
+
+    if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบหนังสือ:\n"${bookTitle}"`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/admin/ebooks/${ebookId}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showToast(`✓ ${data.message || 'ลบหนังสือเรียบร้อยแล้ว'}`);
+            loadAdminEbooks();
+            loadDashboardStats();
+            return;
+        }
+
+        // กรณีหนังสือมีประวัติการสั่งซื้ออยู่แล้ว
+        if (data.has_orders) {
+            const forceConfirm = confirm(
+                `⚠️ แจ้งเตือนความปลอดภัยของข้อมูล:\n\n` +
+                `หนังสือ "${bookTitle}" มีประวัติการสั่งซื้อไปแล้ว ${data.order_count} รายการ\n\n` +
+                `• คำแนะนำ: ควรเลือก "ยกเลิก (Cancel)" แล้วคลิกปุ่ม "ปิดการขาย" เพื่อไม่ให้ลูกค้าใหม่ซื้อได้ แต่ลูกค้าที่เคยซื้อแล้วยังดูประวัติและดาวน์โหลดได้ตามปกติ\n\n` +
+                `• หากต้องการลบข้อมูลหนังสือและประวัติการสั่งซื้อที่เกี่ยวข้องออกทั้งหมดจริงๆ ให้กด "ตกลง (OK)" เพื่อยืนยันการลบแบบบังคับ (Force Delete)`
+            );
+
+            if (forceConfirm) {
+                const forceRes = await fetch(`/api/admin/ebooks/${ebookId}?force=true`, {
+                    method: 'DELETE'
+                });
+                const forceData = await forceRes.json();
+                if (forceRes.ok) {
+                    showToast(`✓ ${forceData.message || 'ลบหนังสือและข้อมูลที่เกี่ยวข้องเรียบร้อยแล้ว'}`);
+                    loadAdminEbooks();
+                    loadDashboardStats();
+                } else {
+                    showToast(forceData.error || 'ไม่สามารถลบได้', 'error');
+                }
+            }
+        } else {
+            showToast(data.error || 'เกิดข้อผิดพลาดในการลบหนังสือ', 'error');
+        }
+    } catch (err) {
+        console.error('Delete ebook error:', err);
+        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
     }
 }
 
@@ -677,7 +735,10 @@ async function toggleUserRole(userId, currentRoleId) {
 // 6. Edit E-Book Modal Functions (ตรงตามข้อ 3: แก้ไขราคาและลิงก์ดาวน์โหลด)
 // ====================================================================
 
-function openEditEbookModal(book) {
+function openEditEbookModal(bookOrId) {
+    const book = (typeof bookOrId === 'object') ? bookOrId : allAdminEbooksList.find(b => b.ebook_id == bookOrId);
+    if (!book) return;
+
     document.getElementById('edit-book-id').value = book.ebook_id;
     document.getElementById('edit-book-title').value = book.title;
     document.getElementById('edit-book-price').value = book.price;
@@ -700,6 +761,14 @@ function openEditEbookModal(book) {
 
 function closeEditEbookModal() {
     document.getElementById('edit-ebook-modal').classList.remove('active');
+}
+
+function deleteEbookFromEditModal() {
+    const ebookId = document.getElementById('edit-book-id').value;
+    if (ebookId) {
+        closeEditEbookModal();
+        deleteEbook(ebookId);
+    }
 }
 
 async function submitEditEbook(e) {
