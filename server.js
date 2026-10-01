@@ -65,6 +65,21 @@ const slipStorage = multer.diskStorage({
 });
 const uploadSlip = multer({ storage: slipStorage });
 
+// Configure Multer for E-Book cover image uploads
+const coverStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dest = path.join(__dirname, 'public', 'assets', 'covers');
+        fs.mkdirSync(dest, { recursive: true });
+        cb(null, dest);
+    },
+    filename: (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname) || '.png';
+        cb(null, `cover_${unique}${ext}`);
+    }
+});
+const uploadCover = multer({ storage: coverStorage });
+
 // Route for Auth Page
 app.get(['/auth', '/login', '/register'], (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'auth.html'));
@@ -1076,11 +1091,18 @@ app.get('/api/admin/ebooks', (req, res) => {
 });
 
 // Add new E-Book
-app.post('/api/admin/ebooks', (req, res) => {
+app.post('/api/admin/ebooks', uploadCover.single('cover_file'), async (req, res) => {
     try {
         const { category_id, author_id, title, isbn, description, price, cover_image, sample_file_url, full_file_url, is_published } = req.body;
         if (!category_id || !author_id || !title || price === undefined) {
             return res.status(400).json({ error: 'กรุณาระบุข้อมูลจำเป็น (ชื่อเรื่อง, หมวดหมู่, ผู้แต่ง, ราคา)' });
+        }
+
+        let finalCover = '/assets/covers/default.svg';
+        if (req.file) {
+            finalCover = `/assets/covers/${req.file.filename}`;
+        } else if (cover_image && cover_image.trim()) {
+            finalCover = cover_image.trim();
         }
 
         const insert = db.prepare(`
@@ -1088,28 +1110,46 @@ app.post('/api/admin/ebooks', (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         const result = insert.run(
-            category_id,
-            author_id,
-            title,
-            isbn || null,
-            description || '',
+            parseInt(category_id),
+            parseInt(author_id),
+            title.trim(),
+            isbn ? isbn.trim() : null,
+            description ? description.trim() : '',
             parseFloat(price),
-            cover_image || '/assets/covers/default.svg',
+            finalCover,
             sample_file_url || null,
             full_file_url || '/downloads/full_db_guide.pdf',
             is_published !== undefined ? parseInt(is_published) : 1
         );
 
-        res.status(201).json({ message: 'เพิ่มหนังสือเรียบร้อย', ebook_id: result.lastInsertRowid });
+        // Sync to Supabase Cloud
+        try {
+            await supabaseSync.pool.query(`
+                INSERT INTO ebooks (ebook_id, category_id, author_id, title, isbn, description, price, cover_image, sample_file_url, full_file_url, is_published)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                ON CONFLICT (ebook_id) DO UPDATE SET 
+                    title = EXCLUDED.title, price = EXCLUDED.price, cover_image = EXCLUDED.cover_image, description = EXCLUDED.description, is_published = EXCLUDED.is_published;
+            `, [result.lastInsertRowid, parseInt(category_id), parseInt(author_id), title.trim(), isbn ? isbn.trim() : null, description ? description.trim() : '', parseFloat(price), finalCover, sample_file_url || null, full_file_url || '/downloads/full_db_guide.pdf', is_published !== undefined ? parseInt(is_published) : 1]);
+        } catch (syncErr) {
+            console.warn('⚠️ Supabase ebook sync note:', syncErr.message);
+        }
+
+        res.status(201).json({ message: 'เพิ่มหนังสือเรียบร้อย', ebook_id: result.lastInsertRowid, cover_image: finalCover });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 // Update E-Book
-app.put('/api/admin/ebooks/:id', (req, res) => {
+app.put('/api/admin/ebooks/:id', uploadCover.single('cover_file'), async (req, res) => {
     try {
         const { category_id, author_id, title, isbn, description, price, cover_image, is_published, full_file_url } = req.body;
+        
+        let finalCover = cover_image || null;
+        if (req.file) {
+            finalCover = `/assets/covers/${req.file.filename}`;
+        }
+
         db.prepare(`
             UPDATE ebooks 
             SET category_id = COALESCE(?, category_id),
@@ -1123,9 +1163,36 @@ app.put('/api/admin/ebooks/:id', (req, res) => {
                 is_published = COALESCE(?, is_published),
                 updated_at = CURRENT_TIMESTAMP
             WHERE ebook_id = ?
-        `).run(category_id, author_id, title, isbn, description, price ? parseFloat(price) : null, cover_image, full_file_url, is_published, req.params.id);
+        `).run(
+            category_id ? parseInt(category_id) : null,
+            author_id ? parseInt(author_id) : null,
+            title ? title.trim() : null,
+            isbn ? isbn.trim() : null,
+            description !== undefined ? description.trim() : null,
+            price ? parseFloat(price) : null,
+            finalCover,
+            full_file_url ? full_file_url.trim() : null,
+            is_published !== undefined && is_published !== null ? parseInt(is_published) : null,
+            req.params.id
+        );
 
-        res.json({ message: 'ปรับปรุงข้อมูลหนังสือสำเร็จ' });
+        // Sync update to Supabase
+        try {
+            await supabaseSync.pool.query(`
+                UPDATE ebooks 
+                SET title = COALESCE($1, title),
+                    price = COALESCE($2, price),
+                    cover_image = COALESCE($3, cover_image),
+                    description = COALESCE($4, description),
+                    is_published = COALESCE($5, is_published),
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE ebook_id = $6
+            `, [title ? title.trim() : null, price ? parseFloat(price) : null, finalCover, description !== undefined ? description.trim() : null, is_published !== undefined && is_published !== null ? parseInt(is_published) : null, req.params.id]);
+        } catch (syncErr) {
+            console.warn('⚠️ Supabase ebook update note:', syncErr.message);
+        }
+
+        res.json({ message: 'ปรับปรุงข้อมูลหนังสือสำเร็จ', cover_image: finalCover });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

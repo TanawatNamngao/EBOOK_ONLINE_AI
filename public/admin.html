@@ -584,6 +584,18 @@ ORDER BY total_spent DESC;
                     </div>
                 </div>
                 <div style="margin-bottom:14px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">รูปภาพหน้าปกหนังสือ (Cover Image)</label>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <div style="width:65px; height:85px; border-radius:6px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.02); overflow:hidden; flex-shrink:0;">
+                            <img id="new-book-cover-preview" src="/assets/covers/default.svg" style="width:100%; height:100%; object-fit:cover;" alt="ตัวอย่างปก">
+                        </div>
+                        <div style="flex:1;">
+                            <input type="file" id="new-book-cover-file" accept="image/*" class="search-input" style="width:100%; padding:6px; margin-bottom:6px; font-size:0.82rem;" onchange="previewBookCover(this, 'new-book-cover-preview')">
+                            <input type="text" id="new-book-cover-url" placeholder="หรือใส่ URL รูปภาพ (เช่น /assets/covers/default.svg)" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:0.82rem;" oninput="previewCoverUrl(this.value, 'new-book-cover-preview')">
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom:14px;">
                     <label style="display:block; font-size:0.88rem; margin-bottom:4px;">คำอธิบายหนังสือ</label>
                     <textarea id="new-book-desc" rows="3" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;"></textarea>
                 </div>
@@ -632,6 +644,18 @@ ORDER BY total_spent DESC;
                     <input type="text" id="edit-book-file-url" required class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;">
                 </div>
                 <div style="margin-bottom:14px;">
+                    <label style="display:block; font-size:0.88rem; margin-bottom:4px;">รูปภาพหน้าปกหนังสือ (Cover Image)</label>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <div style="width:65px; height:85px; border-radius:6px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.02); overflow:hidden; flex-shrink:0;">
+                            <img id="edit-book-cover-preview" src="" style="width:100%; height:100%; object-fit:cover;" alt="ตัวอย่างปก">
+                        </div>
+                        <div style="flex:1;">
+                            <input type="file" id="edit-book-cover-file" accept="image/*" class="search-input" style="width:100%; padding:6px; margin-bottom:6px; font-size:0.82rem;" onchange="previewBookCover(this, 'edit-book-cover-preview')">
+                            <input type="text" id="edit-book-cover-url" placeholder="หรือระบุ URL รูปภาพหน้าปก" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:0.82rem;" oninput="previewCoverUrl(this.value, 'edit-book-cover-preview')">
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom:14px;">
                     <label style="display:block; font-size:0.88rem; margin-bottom:4px;">คำอธิบายหนังสือ</label>
                     <textarea id="edit-book-desc" rows="3" class="search-input" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px;"></textarea>
                 </div>
@@ -669,6 +693,6 @@ ORDER BY total_spent DESC;
     <!-- Toast Notification -->
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="/js/admin.js?v=20261001_v2"></script>
+    <script src="/js/admin.js?v=20261001_v4"></script>
 </body>
 </html>

@@ -536,16 +536,30 @@ async function submitNewEbook(e) {
     const price = document.getElementById('new-book-price').value;
     const isbn = document.getElementById('new-book-isbn').value;
     const description = document.getElementById('new-book-desc').value;
+    const fileInput = document.getElementById('new-book-cover-file');
+    const coverUrlInput = document.getElementById('new-book-cover-url');
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('category_id', category_id);
+    formData.append('author_id', author_id);
+    formData.append('price', price);
+    formData.append('isbn', isbn);
+    formData.append('description', description);
+    formData.append('full_file_url', '/downloads/full_db_guide.pdf');
+
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+        formData.append('cover_file', fileInput.files[0]);
+    } else if (coverUrlInput && coverUrlInput.value.trim()) {
+        formData.append('cover_image', coverUrlInput.value.trim());
+    } else {
+        formData.append('cover_image', '/assets/covers/default.svg');
+    }
 
     try {
         const res = await fetch('/api/admin/ebooks', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title, category_id, author_id, price, isbn, description,
-                cover_image: '/assets/covers/default.svg',
-                full_file_url: '/downloads/full_db_guide.pdf'
-            })
+            body: formData
         });
         const data = await res.json();
         if (res.ok) {
@@ -554,6 +568,8 @@ async function submitNewEbook(e) {
             loadAdminEbooks();
             loadDashboardStats();
             document.getElementById('add-ebook-form').reset();
+            const previewImg = document.getElementById('new-book-cover-preview');
+            if (previewImg) previewImg.src = '/assets/covers/default.svg';
         } else {
             showToast(data.error || 'เกิดข้อผิดพลาด', 'error');
         }
@@ -746,6 +762,14 @@ function openEditEbookModal(bookOrId) {
     document.getElementById('edit-book-desc').value = book.description || '';
     document.getElementById('edit-book-file-url').value = book.full_file_url || '/downloads/full_db_guide.pdf';
 
+    // Populate Cover Image Preview & URL
+    const previewImg = document.getElementById('edit-book-cover-preview');
+    if (previewImg) previewImg.src = book.cover_image || '/assets/covers/default.svg';
+    const coverUrlInput = document.getElementById('edit-book-cover-url');
+    if (coverUrlInput) coverUrlInput.value = book.cover_image || '';
+    const fileInput = document.getElementById('edit-book-cover-file');
+    if (fileInput) fileInput.value = '';
+
     const catSelect = document.getElementById('edit-book-category');
     catSelect.innerHTML = allAdminCategories.map(c => 
         `<option value="${c.category_id}" ${c.category_id == book.category_id ? 'selected' : ''}>${c.name}</option>`
@@ -781,14 +805,28 @@ async function submitEditEbook(e) {
     const isbn = document.getElementById('edit-book-isbn').value;
     const description = document.getElementById('edit-book-desc').value;
     const full_file_url = document.getElementById('edit-book-file-url').value;
+    const fileInput = document.getElementById('edit-book-cover-file');
+    const coverUrlInput = document.getElementById('edit-book-cover-url');
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('category_id', category_id);
+    formData.append('author_id', author_id);
+    formData.append('price', price);
+    formData.append('isbn', isbn);
+    formData.append('description', description);
+    formData.append('full_file_url', full_file_url);
+
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+        formData.append('cover_file', fileInput.files[0]);
+    } else if (coverUrlInput && coverUrlInput.value.trim()) {
+        formData.append('cover_image', coverUrlInput.value.trim());
+    }
 
     try {
         const res = await fetch(`/api/admin/ebooks/${ebookId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title, category_id, author_id, price, isbn, description, full_file_url
-            })
+            body: formData
         });
         const data = await res.json();
         if (res.ok) {
@@ -800,6 +838,25 @@ async function submitEditEbook(e) {
         }
     } catch (err) {
         showToast(err.message, 'error');
+    }
+}
+
+// Live Image Preview Helpers
+function previewBookCover(input, previewImgId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById(previewImgId);
+            if (img) img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function previewCoverUrl(url, previewImgId) {
+    if (url && url.trim()) {
+        const img = document.getElementById(previewImgId);
+        if (img) img.src = url.trim();
     }
 }
 
