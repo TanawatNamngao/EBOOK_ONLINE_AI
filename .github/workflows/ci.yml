@@ -29,7 +29,15 @@ jobs:
         run: node scripts/generate_assets.js
 
       - name: Run Automated Test Cases (10 Test Cases)
-        run: npm test
+        run: |
+          {
+            echo "## Automated Test Suite Run Output"
+            echo '```'
+            npm test 2>&1 || true
+            echo '```'
+          } >> $GITHUB_STEP_SUMMARY
+          npm test
+
 
 
 
