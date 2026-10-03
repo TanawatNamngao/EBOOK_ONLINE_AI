@@ -28,11 +28,29 @@ jobs:
       - name: Generate Asset Directories & Initial Seed
         run: node scripts/generate_assets.js
 
-      - name: Start Server in Background
+      - name: Run Automated Test Suite (10 Test Cases)
         run: |
           node server.js &
-          sleep 4
+          SERVER_PID=$!
+          echo "Waiting for server to start..."
+          node -e "
+          const http = require('http');
+          let retries = 0;
+          function check() {
+            http.get('http://127.0.0.1:3000/api/ebooks', res => {
+              console.log('Server is UP with status:', res.statusCode);
+              process.exit(0);
+            }).on('error', () => {
+              if (++retries > 30) {
+                console.error('Server failed to respond within 15s');
+                process.exit(1);
+              }
+              setTimeout(check, 500);
+            });
+          }
+          check();
+          "
+          node tests/run_tests.js
+          kill $SERVER_PID || true
 
-      - name: Run Automated Test Cases (10 Test Cases)
-        run: npm test
 
