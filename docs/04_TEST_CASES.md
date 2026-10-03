@@ -71,3 +71,50 @@
 * **ความสมบูรณ์ของความสัมพันธ์ (Referential Integrity):** ทุกตารางลูกมี Foreign Key อ้างอิงตรงไปยังตารางแม่ พร้อมเงื่อนไข `ON DELETE CASCADE` หรือ `ON DELETE RESTRICT` ป้องกันข้อมูลเด็กกำพร้า (Orphan records)
 * **ความถูกต้องตามหลักบรรทัดฐาน (3NF Compliance):** ข้อมูลไม่มี Transitive Dependency และบันทึกราคาซื้อขายใน `order_items` เพื่อป้องกันการผันผวนของยอดเงินในอดีต
 * **ความปลอดภัยของธุรกรรม (Transaction Safety):** ขั้นตอนการสั่งซื้อ (Checkout) และการอนุมัติคำสั่งซื้อ (Confirmation) ทำงานภายใต้ Database Transaction หากขั้นตอนใดผิดพลาด ระบบจะ Rollback คืนสถานะเดิมทันที 100%
+
+---
+
+## 4. ชุดทดสอบอัตโนมัติและระบบ Continuous Integration (CI Pipeline)
+
+[![EBOOK_ONLINE CI Pipeline](https://github.com/TanawatNamngao/EBOOK_ONLINE_AI/actions/workflows/ci.yml/badge.svg)](https://github.com/TanawatNamngao/EBOOK_ONLINE_AI/actions/workflows/ci.yml)
+
+### 4.1 ชุดทดสอบอัตโนมัติ (Automated Test Suite Runner)
+โครงงานได้พัฒนาระบบทดสอบอัตโนมัติครอบคลุมทั้ง 10 กรณี ผ่านสคริปต์ [`tests/run_tests.js`](file:///c:/Users/next5/Desktop/EBOOK/tests/run_tests.js) สามารถสั่งรันได้ด้วยคำสั่งมาตรฐาน:
+
+```bash
+npm test
+```
+
+### 4.2 ผลการรันชุดทดสอบอัตโนมัติจริง (Execution Output)
+
+```
+=======================================================
+🧪 EBOOK_ONLINE: Automated Test Cases Runner
+=======================================================
+
+⏳ Starting local server for automated tests...
+🚀 Test server ready on http://127.0.0.1:3000
+
+✅ [TC-01] สมัครสมาชิกใหม่และสร้างตะกร้าอัตโนมัติ: PASS
+✅ [TC-02] ป้องกันผู้ใช้ซ้ำ (UNIQUE constraint): PASS
+✅ [TC-03] ค้นหาและคัดกรองหนังสือตามคำสำคัญ: PASS
+✅ [TC-04] ระบบตะกร้าสินค้าคำนวณยอดถูกต้อง: PASS
+✅ [TC-05] สั่งซื้อและบันทึกสถานะเริ่มต้นเป็น pending: PASS
+✅ [TC-06] ดาวน์โหลดไฟล์ E-Book สำเร็จเมื่อออเดอร์ได้รับการยืนยันแล้ว: PASS
+✅ [TC-07] Database ปฏิเสธ Username/Email ซ้ำในระดับ Schema (UNIQUE): PASS
+✅ [TC-08] Database ปฏิเสธราคาติดลบด้วย CHECK constraint (price >= 0): PASS
+✅ [TC-09] ปฏิเสธการสั่งซื้อหนังสือที่ปิดการขาย (is_published = 0): PASS
+✅ [TC-10] สกัดกั้นการเปิดดาวน์โหลดก่อนยืนยันคำสั่งซื้อ (HTTP 403 / 404 Security Gate): PASS
+
+=======================================================
+📊 ผลการทดสอบทั้งหมด: 10 ผ่าน, 0 ไม่ผ่าน (ทั้งหมด 10 กรณี)
+=======================================================
+🛑 Stopping test server...
+```
+
+### 4.3 การบูรณาการกับ GitHub Actions (Continuous Integration: CI)
+ระบบได้รับการติดตั้ง GitHub Actions Workflow ในไฟล์ [`.github/workflows/ci.yml`](file:///c:/Users/next5/Desktop/EBOOK/.github/workflows/ci.yml) เพื่อทำการตรวจสอบโค้ด ติดตั้ง Dependency และรันชุดทดสอบอัตโนมัติ 10 กรณีทุกครั้งที่มีการ `push` หรือสร้าง `pull_request` เข้าสู่ Branch `main`
+
+- **ลิงก์หน้าผลการรัน CI บน GitHub Actions:**  
+  👉 [https://github.com/TanawatNamngao/EBOOK_ONLINE_AI/actions](https://github.com/TanawatNamngao/EBOOK_ONLINE_AI/actions)
+

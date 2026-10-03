@@ -3,7 +3,31 @@
 // วิชา: Database Mini Project 2026
 // ====================================================================
 
+const http = require('http');
+const { spawn } = require('child_process');
+const path = require('path');
 const db = require('../database/db');
+
+async function isServerRunning(port = 3000) {
+    return new Promise((resolve) => {
+        const req = http.get(`http://127.0.0.1:${port}/api/ebooks`, (res) => {
+            resolve(true);
+        });
+        req.on('error', () => resolve(false));
+        req.setTimeout(800, () => {
+            req.destroy();
+            resolve(false);
+        });
+    });
+}
+
+async function waitForServer(port = 3000, maxRetries = 25) {
+    for (let i = 0; i < maxRetries; i++) {
+        if (await isServerRunning(port)) return true;
+        await new Promise(r => setTimeout(r, 400));
+    }
+    return false;
+}
 
 async function runTests() {
     console.log('=======================================================');
@@ -12,6 +36,7 @@ async function runTests() {
 
     let passed = 0;
     let failed = 0;
+    let spawnedServer = null;
 
     function assert(testId, name, condition, details = '') {
         if (condition) {
@@ -24,6 +49,21 @@ async function runTests() {
     }
 
     try {
+        const isUp = await isServerRunning(3000);
+        if (!isUp) {
+            console.log('⏳ Starting local server for automated tests...');
+            spawnedServer = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
+                env: { ...process.env, PORT: '3000' },
+                stdio: 'ignore'
+            });
+            const ready = await waitForServer(3000);
+            if (!ready) {
+                console.error('❌ Failed to start test server within timeout');
+                if (spawnedServer) spawnedServer.kill();
+                process.exit(1);
+            }
+            console.log('🚀 Test server ready on http://127.0.0.1:3000\n');
+        }
         // TC-01: สมัครสมาชิก
         const testUser = `test_user_${Date.now()}`;
         const resReg = await fetch('http://localhost:3000/api/auth/register', {
@@ -132,6 +172,13 @@ async function runTests() {
 
     } catch (err) {
         console.error('Test runner error:', err);
+        failed++;
+    } finally {
+        if (spawnedServer) {
+            console.log('🛑 Stopping test server...');
+            spawnedServer.kill();
+        }
+        process.exit(failed > 0 ? 1 : 0);
     }
 }
 
