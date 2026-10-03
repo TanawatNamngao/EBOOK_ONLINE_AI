@@ -28,5 +28,11 @@ jobs:
       - name: Generate Asset Directories & Initial Seed
         run: node scripts/generate_assets.js
 
+      - name: Start Server in Background
+        run: |
+          node server.js &
+          sleep 4
+
       - name: Run Automated Test Cases (10 Test Cases)
         run: npm test
+
