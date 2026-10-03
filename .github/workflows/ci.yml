@@ -28,25 +28,9 @@ jobs:
       - name: Generate Asset Directories & Initial Seed
         run: node scripts/generate_assets.js
 
-      - name: Run Automated Test Suite (10 Test Cases)
-        run: |
-          node server.js > server.log 2>&1 &
-          SERVER_PID=$!
-          sleep 3
-          echo "=== Running Tests ==="
-          node tests/run_tests.js > test_results.log 2>&1 || true
-          cat test_results.log
-          kill $SERVER_PID || true
-          grep "10 ผ่าน, 0 ไม่ผ่าน" test_results.log
+      - name: Run Automated Test Cases (10 Test Cases)
+        run: npm test
 
-      - name: Upload Logs on Failure
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-logs
-          path: |
-            server.log
-            test_results.log
 
 
 

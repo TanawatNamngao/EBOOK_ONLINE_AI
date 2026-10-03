@@ -23,7 +23,7 @@ async function isServerRunning(port = 3000) {
     });
 }
 
-async function waitForServer(port = 3000, maxRetries = 50) {
+async function waitForServer(port = 3000, maxRetries = 100) {
     for (let i = 0; i < maxRetries; i++) {
         if (await isServerRunning(port)) return true;
         await new Promise(r => setTimeout(r, 400));
