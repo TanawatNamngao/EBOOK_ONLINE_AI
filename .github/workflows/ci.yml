@@ -10,7 +10,7 @@ on:
 jobs:
   test:
     name: Build & Run Automated Test Suite
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout Code
@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install Dependencies
@@ -29,14 +29,8 @@ jobs:
         run: node scripts/generate_assets.js
 
       - name: Run Automated Test Cases (10 Test Cases)
-        run: |
-          {
-            echo "## Automated Test Suite Run Output"
-            echo '```'
-            npm test 2>&1 || true
-            echo '```'
-          } >> $GITHUB_STEP_SUMMARY
-          npm test
+        run: npm test
+
 
 
 
