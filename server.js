@@ -1688,9 +1688,9 @@ app.use((req, res) => {
 });
 
 // Start Server
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
     console.log(`=======================================================`);
-    console.log(`🚀 EBOOK_ONLINE Server running at http://0.0.0.0:${PORT}`);
+    console.log(`🚀 EBOOK_ONLINE Server running on port ${PORT}`);
     console.log(`📚 Storefront:  http://localhost:${PORT}`);
     console.log(`🛠️ Admin Panel: http://localhost:${PORT}/admin.html`);
     console.log(`=======================================================`);

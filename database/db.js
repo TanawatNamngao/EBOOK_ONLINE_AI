@@ -32,10 +32,12 @@ function initDatabase() {
 // เรียกใช้ทันที
 initDatabase();
 
-// Sync ข้อมูลล่าสุดจาก Supabase Cloud ลง SQLite แบบไม่บล็อกการทำงาน
-try {
-    const supabase = require('./supabase');
-    supabase.syncFromSupabaseToSQLite(db).catch(e => console.warn('Supabase initial sync note:', e.message));
-} catch (e) {}
+// Sync ข้อมูลล่าสุดจาก Supabase Cloud ลง SQLite แบบไม่บล็อกการทำงาน (ข้ามใน CI เพื่อความเร็ว)
+if (!process.env.CI) {
+    try {
+        const supabase = require('./supabase');
+        supabase.syncFromSupabaseToSQLite(db).catch(e => console.warn('Supabase initial sync note:', e.message));
+    } catch (e) {}
+}
 
 module.exports = db;

@@ -8,9 +8,11 @@ const { spawn } = require('child_process');
 const path = require('path');
 const db = require('../database/db');
 
+const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3000';
+
 async function isServerRunning(port = 3000) {
     return new Promise((resolve) => {
-        const req = http.get(`http://127.0.0.1:${port}/api/ebooks`, (res) => {
+        const req = http.get(`${BASE_URL}/api/ebooks`, (res) => {
             resolve(true);
         });
         req.on('error', () => resolve(false));
@@ -21,7 +23,7 @@ async function isServerRunning(port = 3000) {
     });
 }
 
-async function waitForServer(port = 3000, maxRetries = 25) {
+async function waitForServer(port = 3000, maxRetries = 50) {
     for (let i = 0; i < maxRetries; i++) {
         if (await isServerRunning(port)) return true;
         await new Promise(r => setTimeout(r, 400));
@@ -54,7 +56,7 @@ async function runTests() {
             console.log('⏳ Starting local server for automated tests...');
             spawnedServer = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
                 env: { ...process.env, PORT: '3000' },
-                stdio: 'ignore'
+                stdio: ['ignore', 'ignore', 'inherit']
             });
             const ready = await waitForServer(3000);
             if (!ready) {
@@ -62,11 +64,11 @@ async function runTests() {
                 if (spawnedServer) spawnedServer.kill();
                 process.exit(1);
             }
-            console.log('🚀 Test server ready on http://127.0.0.1:3000\n');
+            console.log(`🚀 Test server ready on ${BASE_URL}\n`);
         }
         // TC-01: สมัครสมาชิก
         const testUser = `test_user_${Date.now()}`;
-        const resReg = await fetch('http://localhost:3000/api/auth/register', {
+        const resReg = await fetch(`${BASE_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -80,7 +82,7 @@ async function runTests() {
         assert('TC-01', 'สมัครสมาชิกใหม่และสร้างตะกร้าอัตโนมัติ', resReg.status === 201 && regData.user.username === testUser);
 
         // TC-02: ป้องกันผู้ใช้ซ้ำ (Duplicate User)
-        const resDup = await fetch('http://localhost:3000/api/auth/register', {
+        const resDup = await fetch(`${BASE_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -93,12 +95,12 @@ async function runTests() {
         assert('TC-02', 'ป้องกันผู้ใช้ซ้ำ (UNIQUE constraint)', resDup.status === 400);
 
         // TC-03: ค้นหาและคัดกรอง
-        const resSearch = await fetch('http://localhost:3000/api/ebooks?search=Database');
+        const resSearch = await fetch(`${BASE_URL}/api/ebooks?search=Database`);
         const searchData = await resSearch.json();
         assert('TC-03', 'ค้นหาและคัดกรองหนังสือตามคำสำคัญ', resSearch.status === 200 && searchData.length >= 1);
 
         // TC-04: ตะกร้าสินค้า
-        const resCart = await fetch('http://localhost:3000/api/cart', {
+        const resCart = await fetch(`${BASE_URL}/api/cart`, {
             headers: { 'x-user-id': regData.user.user_id }
         });
         const cartData = await resCart.json();
@@ -106,12 +108,12 @@ async function runTests() {
 
         // TC-05: สั่งซื้อและชำระเงินจำลอง (Pending)
         const targetBook = db.prepare("SELECT ebook_id FROM ebooks WHERE is_published = 1 LIMIT 1").get();
-        await fetch('http://localhost:3000/api/cart/items', {
+        await fetch(`${BASE_URL}/api/cart/items`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-user-id': regData.user.user_id },
             body: JSON.stringify({ ebook_id: targetBook.ebook_id })
         });
-        const checkoutRes = await fetch('http://localhost:3000/api/orders/checkout', {
+        const checkoutRes = await fetch(`${BASE_URL}/api/orders/checkout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-user-id': regData.user.user_id }
         });
@@ -126,7 +128,7 @@ async function runTests() {
             WHERE o.status = 'confirmed' AND dl.download_count < dl.max_downloads
             LIMIT 1
         `).get();
-        const resDownload = await fetch(`http://localhost:3000/api/download/${confirmedDownload.token}`);
+        const resDownload = await fetch(`${BASE_URL}/api/download/${confirmedDownload.token}`);
         assert('TC-06', 'ดาวน์โหลดไฟล์ E-Book สำเร็จเมื่อออเดอร์ได้รับการยืนยันแล้ว', resDownload.status === 200);
 
         // TC-07: ตรวจสอบ Constraint ข้อมูลผู้ใช้ซ้ำในฐานข้อมูล
@@ -154,7 +156,7 @@ async function runTests() {
             db.prepare("INSERT INTO ebooks (category_id, author_id, title, price, full_file_url, is_published) VALUES (1, 1, 'หนังสือปิดการขายทดสอบ', 100, '/test', 0)").run();
         }
         const targetUnpub = db.prepare("SELECT ebook_id FROM ebooks WHERE is_published = 0 LIMIT 1").get();
-        const resUnpub = await fetch('http://localhost:3000/api/cart/items', {
+        const resUnpub = await fetch(`${BASE_URL}/api/cart/items`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-user-id': regData.user.user_id },
             body: JSON.stringify({ ebook_id: targetUnpub.ebook_id })
@@ -163,7 +165,7 @@ async function runTests() {
 
         // TC-10: 🔒 สกัดกั้นการเปิดดาวน์โหลดก่อนยืนยันคำสั่งซื้อ (Security Gate)
         // create a fake token with pending order
-        const pendingTokenRes = await fetch('http://localhost:3000/api/download/non_existent_or_pending_token_test');
+        const pendingTokenRes = await fetch(`${BASE_URL}/api/download/non_existent_or_pending_token_test`);
         assert('TC-10', 'สกัดกั้นการเปิดดาวน์โหลดก่อนยืนยันคำสั่งซื้อ (HTTP 403 / 404 Security Gate)', pendingTokenRes.status === 404 || pendingTokenRes.status === 403);
 
         console.log('\n=======================================================');
